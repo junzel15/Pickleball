@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+  <title>Pickleball</title>
+  <meta name="description" content="Singles pickleball vs the CPU — dinks, drives, lobs and the kitchen.">
+  <meta name="theme-color" content="#0f1722">
+
+  <!-- Installable app (PWA) -->
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Pickleball">
+
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <!-- Loading screen: shown instantly, removed by game.js when everything is ready -->
+  <div id="loader" aria-busy="true">
+    <div class="ld-inner">
+      <div class="ld-scene" aria-hidden="true">
+        <div class="ld-ball"></div>
+        <div class="ld-shadow"></div>
+        <div class="ld-paddle"><span class="ld-face"></span><span class="ld-handle"></span></div>
+      </div>
+      <h1 class="ld-title">Pickleball</h1>
+      <div class="ld-bar" role="progressbar" aria-label="Loading" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="loadBarWrap">
+        <div class="ld-fill" id="loadBar"></div>
+      </div>
+      <div class="ld-status" id="loadStatus" role="status" aria-live="polite">Loading…</div>
+      <p class="ld-tip" id="loadTip">Tip: Let the serve and the return bounce — that's the two-bounce rule.</p>
+    </div>
+  </div>
+
+  <div id="app">
+    <header class="scoreboard">
+      <button class="icon-btn menu-btn" id="pauseBtn" aria-label="Open the game menu">☰ Menu</button>
+      <div class="team you">
+        <span class="serve-dot" id="dotYou"></span>
+        <span class="name" id="nameYou">You</span>
+        <span class="score" id="scoreYou">0</span>
+      </div>
+      <div class="center">
+        <div class="call" id="call">0 – 0</div>
+        <div class="sub" id="subcall">Game to 11 · win by 2</div>
+      </div>
+      <div class="team cpu">
+        <span class="score" id="scoreCpu">0</span>
+        <span class="name" id="nameCpu">Bot Player 1</span>
+        <span class="serve-dot" id="dotCpu"></span>
+      </div>
+      <button class="icon-btn" id="muteBtn" aria-label="Mute">🔊</button>
+    </header>
+
+    <main class="playarea">
+      <!-- Touch: virtual joystick -->
+      <div class="pad pad-left" id="joyZone">
+        <div class="joy-base" id="joyBase">
+          <div class="joy-ring"></div>
+          <div class="joy-knob" id="joyKnob"></div>
+        </div>
+        <span class="pad-label">MOVE · AIM</span>
+      </div>
+
+      <div class="stage" id="stage">
+        <canvas id="court"></canvas>
+        <div class="hud-mini" id="hudMini">
+          <button class="icon-btn menu-btn" id="hudPause" aria-label="Open the game menu">☰ Menu</button>
+          <button class="icon-btn" id="hudMute" aria-label="Mute">🔊</button>
+        </div>
+        <button class="power-btn off" id="powerBtn" aria-label="Smash Skill (needs a full energy bar)"><span>POWER</span></button>
+        <div class="banner" id="banner"></div>
+
+        <!-- Main menu -->
+        <div class="overlay" id="menu">
+          <div class="card">
+            <div class="logo"><span class="logo-ball"></span></div>
+            <h1>Pickleball</h1>
+            <p class="tagline">Play computer opponents · First to 11, win by 2</p>
+
+            <button class="profile-chip" id="profileChip" type="button" aria-label="Customize your player and paddle">
+              <canvas id="chipPortrait"></canvas>
+              <span class="pc-text">
+                <b id="chipName">Player</b>
+                <small id="chipPaddle">Paddle</small>
+              </span>
+              <span class="pc-edit">Customize ✎</span>
+            </button>
+
+            <div class="label">Mode</div>
+            <div class="diff mode" id="mode">
+              <button data-value="singles" class="active"><span class="big-label">1 vs 1</span><small>Singles</small></button>
+              <button data-value="doubles"><span class="big-label">2 vs 2</span><small>Doubles</small></button>
+            </div>
+
+            <div class="label">Difficulty</div>
+            <div class="diff" id="diff">
+              <button data-value="easy">Easy</button>
+              <button data-value="medium" class="active">Medium</button>
+              <button data-value="hard">Hard</button>
+            </div>
+
+            <label class="toggle">
+              <input type="checkbox" id="voiceToggle" checked>
+              <span class="switch"></span>
+              Referee voice
+            </label>
+
+            <button class="btn big" id="startBtn">Play</button>
+            <button class="btn secondary install" id="installBtn" hidden>⬇ Install app</button>
+            <p class="ios-tip" id="iosTip" hidden>
+              Install on iPhone/iPad: tap <b>Share</b> <span class="share-ico">⎋</span> then <b>Add to Home Screen</b>.
+            </p>
+
+            <details>
+              <summary>Controls</summary>
+              <ul class="list kb-only">
+                <li><kbd>WASD</kbd> / <kbd>Arrows</kbd> move</li>
+                <li><kbd>Space</kbd> or <kbd>J</kbd> drive (also serves)</li>
+                <li><kbd>K</kbd> dink / soft drop into the kitchen</li>
+                <li><kbd>L</kbd> lob</li>
+                <li>Hold <kbd>←</kbd>/<kbd>→</kbd> while hitting to aim</li>
+                <li><kbd>M</kbd> <b>Smash Skill</b>: power smash when the ⚡ energy bar is full</li>
+                <li><kbd>P</kbd> / <kbd>Esc</kbd> menu · <kbd>N</kbd> mute</li>
+              </ul>
+              <ul class="list touch-only">
+                <li><b>Left stick</b> moves your player</li>
+                <li><b>DRIVE</b> hits hard (and serves), <b>DINK</b> drops it soft into the kitchen, <b>LOB</b> goes high and deep</li>
+                <li>Push the stick left/right while you hit to aim at a sideline</li>
+                <li>Tap the button as the ball reaches you</li>
+                <li><b>POWER</b> (bottom-right of the court): <b>Smash Skill</b> when its ring is full</li>
+              </ul>
+            </details>
+            <details>
+              <summary>Rules</summary>
+              <ul class="list">
+                <li>Serve diagonally into the opposite service box. Landing in the kitchen is a fault.</li>
+                <li><b>Two-bounce rule:</b> the serve and the return must each bounce before being hit.</li>
+                <li><b>Kitchen:</b> you can't volley (hit before the bounce) while standing in the non-volley zone.</li>
+                <li>Only the server scores. Lose the rally while serving = side out.</li>
+                <li>Serve from the right when your score is even, the left when odd.</li>
+                <li><b>Smash Skill ⚡:</b> your energy bar fills during rallies, faster each time you hit the ball (+7%) and when your team wins a point (+12%). At <b>100%</b> press <kbd>M</kbd> (or tap <b>POWER</b>) to power up: you glow, and your next shot on a ball you can legally reach (it waits for one) becomes a blazing power smash that is very hard to return. If the bar isn't full, nothing happens. The power smash still follows the two-bounce and kitchen rules, and the energy is only used when you actually hit the ball.</li>
+                <li><b>Doubles (2 vs 2):</b> you team up with a computer partner against two computer opponents (each game they get new names). Both partners serve before a side out, except at the start, which is called “0-0-2”. Partners switch sides only after winning a point on their serve. The score is called as <i>server – receiver – server number</i>.</li>
+                <li>The referees call close balls <b>“Inside”</b>, <b>“Out”</b>, faults and kitchen violations, and announce the score (server's score first) before every serve.</li>
+              </ul>
+            </details>
+          </div>
+        </div>
+
+        <!-- Customize: name, avatar, paddle -->
+        <div class="overlay hidden" id="settings">
+          <div class="card settings-card">
+            <div class="settings-head">
+              <h2>Customize</h2>
+              <button class="icon-btn" id="settingsClose" aria-label="Close without saving">✕</button>
+            </div>
+            <div class="tabs" id="settingsTabs">
+              <button data-tab="avatar" class="active">Player</button>
+              <button data-tab="outfit">Outfit</button>
+              <button data-tab="paddle">Paddle</button>
+            </div>
+
+            <section data-panel="avatar">
+              <div class="avatar-top">
+                <canvas id="portrait"></canvas>
+                <div class="name-field">
+                  <label for="nameInput">Player name</label>
+                  <input id="nameInput" maxlength="16" autocomplete="off" spellcheck="false" placeholder="Player">
+                  <button class="btn secondary small" id="randomAvatar" type="button">🎲 Random look</button>
+                </div>
+              </div>
+              <div id="avatarOptions" class="opt-groups"></div>
+            </section>
+
+            <section data-panel="outfit" hidden>
+              <div class="outfit-wrap">
+                <canvas id="bodyPreview" aria-label="Full-body preview of your player"></canvas>
+                <div id="outfitOptions" class="opt-groups"></div>
+              </div>
+            </section>
+
+            <section data-panel="paddle" hidden>
+              <div class="paddle-feature">
+                <canvas id="paddleBig"></canvas>
+                <div class="pd-info">
+                  <div class="pd-brand" id="pdBrand"></div>
+                  <div class="pd-model" id="pdModel"></div>
+                  <div class="stat"><span>Power</span><i><b id="pdPower"></b></i></div>
+                  <div class="stat"><span>Control</span><i><b id="pdControl"></b></i></div>
+                  <div class="pd-shape" id="pdShape"></div>
+                </div>
+              </div>
+              <div class="paddle-grid" id="paddleGrid"></div>
+            </section>
+
+            <div class="row">
+              <button class="btn" id="settingsDone" type="button">Save</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Pause -->
+        <div class="overlay hidden" id="pauseMenu">
+          <div class="card game-menu">
+            <h2>Menu</h2>
+            <p class="tagline">Game paused</p>
+            <div class="menu-list">
+              <button class="btn" id="resumeBtn">▶ Resume</button>
+              <button class="btn secondary" id="pmCustomize">🎨 Customize player</button>
+              <button class="btn secondary" id="restartBtn">↻ Restart match</button>
+              <button class="btn secondary" id="quitBtn">⌂ Main menu</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Game over -->
+        <div class="overlay hidden" id="gameOver">
+          <div class="card">
+            <h2 id="goTitle">You win!</h2>
+            <p class="final" id="goScore">11 – 7</p>
+            <p class="tagline" id="goStats"></p>
+            <div class="row">
+              <button class="btn" id="againBtn">Play again</button>
+              <button class="btn secondary" id="menuBtn">Menu</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Touch: shot buttons -->
+      <div class="pad pad-right">
+        <button class="shot lob" data-shot="lob">LOB</button>
+        <button class="shot dink" data-shot="dink">DINK</button>
+        <button class="shot drive" data-shot="drive">DRIVE</button>
+      </div>
+    </main>
+
+    <footer class="hint" id="hint">Choose a mode and difficulty, then press Play</footer>
+  </div>
+
+  <script src="customize.js"></script>
+  <script src="game.js"></script>
+</body>
+</html>
