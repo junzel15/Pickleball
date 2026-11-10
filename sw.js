@@ -1,7 +1,7 @@
 ﻿// Offline support.
 // Network first: when online you always get the newest version of the game;
 // the saved copy is only used when there is no connection.
-const CACHE = 'pickleball-v19';
+const CACHE = 'pickleball-v20';
 const ASSETS = [
   './',
   './index.html',

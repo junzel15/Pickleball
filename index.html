@@ -47,6 +47,30 @@
     </div>
   </div>
 
+  <!-- Android, held sideways: choose to install the app or play in the browser -->
+  <div id="launchChooser" class="launch" hidden>
+    <div class="lc-inner">
+      <img src="icons/icon-192.png" alt="" class="lc-icon" width="56" height="56">
+      <h2>How do you want to play?</h2>
+      <div class="lc-options">
+        <button class="lc-opt lc-install" id="lcInstall" type="button">
+          <span class="lc-sym" aria-hidden="true">⬇</span>
+          <b>Install App</b>
+          <small>Add Pickleball to your home screen. Opens full-screen and works offline.</small>
+        </button>
+        <button class="lc-opt lc-browser" id="lcBrowser" type="button">
+          <span class="lc-sym" aria-hidden="true">▶</span>
+          <b>Play in Browser</b>
+          <small>Start right away — nothing to install.</small>
+        </button>
+      </div>
+      <p class="lc-help" id="lcHelp" hidden>
+        To install, tap Chrome's <b>⋮</b> menu (top-right), then <b>Install app</b> or <b>Add to Home screen</b>.
+        Or tap <b>Play in Browser</b> to start now.
+      </p>
+    </div>
+  </div>
+
   <div id="app">
     <header class="scoreboard">
       <button class="icon-btn menu-btn" id="pauseBtn" aria-label="Open the game menu">☰ Menu</button>
@@ -161,7 +185,7 @@
                 <li>The referees call close balls <b>“Inside”</b>, <b>“Out”</b>, faults and kitchen violations, and announce the score (server's score first) before every serve.</li>
               </ul>
             </details>
-            <p class="version-tag">Version 19</p>
+            <p class="version-tag">Version 20</p>
           </div>
         </div>
 

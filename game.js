@@ -3280,10 +3280,13 @@
   });
   installBtn.addEventListener('click', async () => {
     if (!deferredPrompt) return;
-    deferredPrompt.prompt();
-    try { await deferredPrompt.userChoice; } catch (e) { /* ignore */ }
-    deferredPrompt = null;
-    installBtn.hidden = true;
+    const prompt = deferredPrompt;
+    try {
+      await prompt.prompt();
+      deferredPrompt = null;
+      installBtn.hidden = true;
+      await prompt.userChoice;
+    } catch (e) { /* the browser refused; keep the button for another try */ }
   });
   window.addEventListener('appinstalled', () => { installBtn.hidden = true; });
 
@@ -3315,7 +3318,51 @@
       rotateUI.autoPaused = false;
       if (state === 'paused') togglePause(); // turned back sideways: carry on
     }
+    updateChooser();
   }
+
+  // ---------- "How do you want to play?" (Android phones and tablets) ----------
+  // Once the device is held sideways: Install App or Play in Browser.
+  // Shown once per visit, never inside the installed app.
+  const isAndroid = /android/i.test(navigator.userAgent);
+  const chooser = { el: $('launchChooser'), done: false, ready: false };
+  try { chooser.done = sessionStorage.getItem('pb.launchChoice') !== null; } catch (e) { /* ignore */ }
+
+  function updateChooser() {
+    const show = chooser.ready && isAndroid && !chooser.done && !isStandalone() &&
+      document.body.classList.contains('touch') && window.matchMedia('(orientation: landscape)').matches;
+    chooser.el.hidden = !show;
+  }
+  function finishChooser(choice) {
+    chooser.done = true;
+    try { sessionStorage.setItem('pb.launchChoice', choice); } catch (e) { /* ignore */ }
+    chooser.el.hidden = true;
+  }
+  $('lcBrowser').addEventListener('click', () => {
+    ensureAudio();
+    finishChooser('browser');
+    goFullscreen(); // full-screen + landscape lock where Android allows it
+  });
+  $('lcInstall').addEventListener('click', async () => {
+    ensureAudio();
+    if (!deferredPrompt) { $('lcHelp').hidden = false; return; } // Chrome can't prompt: show the manual way
+    const prompt = deferredPrompt;
+    try {
+      await prompt.prompt(); // Chrome's own install dialog
+      deferredPrompt = null; // a prompt can only be used once
+      installBtn.hidden = true;
+      const result = await prompt.userChoice;
+      if (result && result.outcome === 'accepted') {
+        finishChooser('installed');
+        showBanner('App installed!', 'Open Pickleball from your home screen — or keep playing here.', 'good');
+        setTimeout(hideBanner, 4500);
+      }
+    } catch (e) {
+      $('lcHelp').hidden = false; // Chrome refused to show it: explain the manual way instead
+    }
+  });
+  window.addEventListener('appinstalled', () => finishChooser('installed'));
+
   const portraitMQ = window.matchMedia('(orientation: portrait)');
   if (portraitMQ.addEventListener) portraitMQ.addEventListener('change', checkOrientation);
   else if (portraitMQ.addListener) portraitMQ.addListener(checkOrientation);
@@ -3472,6 +3519,8 @@
     el.classList.add('done');
     el.setAttribute('aria-busy', 'false');
     setTimeout(() => el.remove(), 700);
+    chooser.ready = true; // the install / browser choice can show now
+    updateChooser();
   }
 
   resize();
