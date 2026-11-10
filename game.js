@@ -114,6 +114,7 @@
     compactHud = document.body.classList.contains('touch') && window.matchMedia('(orientation: landscape)').matches;
     fitCamera(); // uses compactHud to keep the court clear of the floating controls
     bgCache.key = ''; // scenery must be redrawn for the new size
+    hudRightW = 0;
     vignette = null;
   }
   let compactHud = false; // touch device held sideways: full-screen court, score drawn on it, controls float over it
@@ -515,6 +516,13 @@
   window.addEventListener('blur', autoPause);
   document.addEventListener('visibilitychange', () => { if (document.hidden) autoPause(); });
   document.addEventListener('gesturestart', (e) => e.preventDefault()); // iOS pinch-zoom
+  // Swipes must never scroll, bounce or refresh the page while playing (menus may scroll)
+  document.addEventListener('touchmove', (e) => {
+    if (e.target instanceof Element && e.target.closest('.overlay')) return;
+    e.preventDefault();
+  }, { passive: false });
+  document.addEventListener('dblclick', (e) => e.preventDefault()); // no double-tap zoom
+  $('stage').addEventListener('contextmenu', (e) => e.preventDefault()); // no long-press menu
 
   function autoPause() {
     held.clear();
@@ -523,36 +531,66 @@
   }
 
   // ---------- virtual joystick ----------
-  const joy = { active: false, id: null, x: 0, y: 0 };
+  // Floating stick: it rests centre-left, jumps to wherever your thumb lands in
+  // the lower-left area, and follows the thumb if you drag far past its edge.
+  const joy = { active: false, id: null, x: 0, y: 0, cx: 0, cy: 0, homeX: 0, homeY: 0, R: 60 };
   const joyZone = $('joyZone');
   const joyBase = $('joyBase');
   const joyKnob = $('joyKnob');
 
+  function placeJoyBase() {
+    joyBase.style.transform = 'translate(' + (joy.cx - joy.homeX) + 'px, ' + (joy.cy - joy.homeY) + 'px)';
+  }
   function joyMove(e) {
-    const r = joyBase.getBoundingClientRect();
-    const R = r.width / 2;
-    let dx = (e.clientX - (r.left + R)) / R;
-    let dy = (e.clientY - (r.top + R)) / R;
-    const m = Math.hypot(dx, dy);
-    if (m > 1) { dx /= m; dy /= m; }
-    joy.x = dx; joy.y = dy;
-    joyKnob.style.transform = `translate(calc(-50% + ${dx * R * 0.62}px), calc(-50% + ${dy * R * 0.62}px))`;
+    let dx = e.clientX - joy.cx, dy = e.clientY - joy.cy;
+    const R = joy.R;
+    const d = Math.hypot(dx, dy);
+    if (d > R * 1.3) { // thumb went well past the edge: bring the stick along
+      const k = (d - R * 1.3) / d;
+      joy.cx += dx * k; joy.cy += dy * k;
+      dx = e.clientX - joy.cx; dy = e.clientY - joy.cy;
+      placeJoyBase();
+    }
+    const dd = Math.hypot(dx, dy);
+    const full = R * 0.85;                    // full deflection a little inside the ring
+    const ux = dd ? dx / dd : 0, uy = dd ? dy / dd : 0;
+    const amt = Math.min(1, dd / full);
+    joy.x = ux * amt; joy.y = uy * amt;
+    const kp = Math.min(dd, full) * 0.72;      // knob travel
+    joyKnob.style.transform = 'translate(calc(-50% + ' + (ux * kp) + 'px), calc(-50% + ' + (uy * kp) + 'px))';
   }
   function releaseJoystick() {
     joy.active = false; joy.id = null; joy.x = 0; joy.y = 0;
     joyKnob.style.transform = '';
+    joyBase.style.transform = ''; // glide back to the resting spot
     joyBase.classList.remove('active');
   }
   joyZone.addEventListener('pointerdown', (e) => {
+    if (joy.active) return;
     e.preventDefault();
     ensureAudio();
     joy.active = true;
     joy.id = e.pointerId;
-    joyBase.classList.add('active');
     try { joyZone.setPointerCapture(e.pointerId); } catch (err) { /* ignore */ }
+    // measure the resting position, then jump the stick under the thumb
+    joyBase.style.transform = '';
+    const r = joyBase.getBoundingClientRect();
+    joy.R = r.width / 2;
+    joy.homeX = r.left + joy.R;
+    joy.homeY = r.top + joy.R;
+    const zr = joyZone.getBoundingClientRect();
+    joy.cx = clamp(e.clientX, zr.left + joy.R * 0.6, zr.right - joy.R * 0.6);
+    joy.cy = clamp(e.clientY, zr.top + joy.R * 0.6, zr.bottom - joy.R * 0.6);
+    joyBase.classList.add('active');
+    placeJoyBase();
     joyMove(e);
   });
-  joyZone.addEventListener('pointermove', (e) => { if (joy.active && e.pointerId === joy.id) joyMove(e); });
+  joyZone.addEventListener('pointermove', (e) => {
+    if (!joy.active || e.pointerId !== joy.id) return;
+    // use every sampled touch point for the smoothest tracking
+    const list = e.getCoalescedEvents ? e.getCoalescedEvents() : null;
+    joyMove(list && list.length ? list[list.length - 1] : e);
+  });
   ['pointerup', 'pointercancel', 'lostpointercapture'].forEach((ev) =>
     joyZone.addEventListener(ev, (e) => { if (e.pointerId === joy.id) releaseJoystick(); }));
 
@@ -573,8 +611,10 @@
   function moveInput() {
     if (joy.active) {
       const m = Math.hypot(joy.x, joy.y);
-      if (m < 0.15) return { dx: 0, dy: 0 };
-      return { dx: joy.x, dy: joy.y };
+      if (m < 0.1) return { dx: 0, dy: 0 };                 // small dead zone
+      const k = Math.min(1, (m - 0.1) / 0.8);                 // full speed from ~90% push
+      const sp = 0.65 * k + 0.35 * k * k * (3 - 2 * k);       // gentle start for fine positioning
+      return { dx: (joy.x / m) * sp, dy: (joy.y / m) * sp };
     }
     let dx = (held.has('right') ? 1 : 0) - (held.has('left') ? 1 : 0);
     let dy = (held.has('down') ? 1 : 0) - (held.has('up') ? 1 : 0);
@@ -961,6 +1001,7 @@
     ball.held = true;
     ball.vx = ball.vy = ball.vz = 0;
     player.swing = 0;
+    player.mvx = player.mvy = 0;
     interceptor.player = interceptor.ai = null;
 
     // Singles: serve from the right when the server's score is even.
@@ -1195,17 +1236,23 @@
 
   function updatePlayer(dt) {
     const { dx, dy } = moveInput();
+    // Ease toward the target speed: quick to start, quick to brake, never jerky
+    const tvx = dx * PLAYER_SPEED, tvy = dy * PLAYER_SPEED;
+    const moving = dx !== 0 || dy !== 0;
+    const k = 1 - Math.exp(-dt * (moving ? 20 : 24));
+    player.mvx = (player.mvx || 0) + (tvx - (player.mvx || 0)) * k;
+    player.mvy = (player.mvy || 0) + (tvy - (player.mvy || 0)) * k;
     if (player.swing > 0) player.swing -= dt;
 
     if (state === 'serve' && serverAth === player) {
       player.y = behindBaseline('player');
-      player.x = clamp(player.x + dx * PLAYER_SPEED * 0.5 * dt, serveHalf[0] + 0.5, serveHalf[1] - 0.5);
+      player.x = clamp(player.x + player.mvx * 0.5 * dt, serveHalf[0] + 0.5, serveHalf[1] - 0.5);
       holdBallFor(player);
       return;
     }
 
-    player.x = clamp(player.x + dx * PLAYER_SPEED * dt, X_MIN, X_MAX);
-    player.y = clamp(player.y + dy * PLAYER_SPEED * dt, NET_Y + 0.6, COURT_L + 5.5);
+    player.x = clamp(player.x + player.mvx * dt, X_MIN, X_MAX);
+    player.y = clamp(player.y + player.mvy * dt, NET_Y + 0.6, COURT_L + 5.5);
 
     // Try to connect with the ball during the swing window (or with an armed Smash Skill)
     const armed = energy.armed > 0;
@@ -2603,36 +2650,92 @@
     }
   }
 
-  // Compact score strip at the top of the court (phones held sideways)
+  // Broadcast-style scoreboard across the top of the court (touch devices held sideways):
+  // [▌ your team | score ] [ call · serve ] [ score | opponents ▐]
+  // It fits between the ⚡ energy bar (left) and the Menu buttons (right).
+  let hudRightW = 0;
   function drawCompactScore() {
-    const you = player.name.length > 10 ? player.name.slice(0, 9) + '…' : player.name;
-    const bots = mode === 'doubles' ? `${firstName(ai)} & ${firstName(ai2)}` : firstName(ai);
+    if (!hudRightW) hudRightW = $('hudMini').offsetWidth || 130;
+    const sc = clamp(VIEW_H / 400, 0.85, 1.4);
+    const top = 8, H = Math.round(44 * sc), rad = 10 * sc;
+    const energyW = clamp(VIEW_W * 0.3, 120, 210);
+    const side = Math.max(energyW + 26, hudRightW + 22);
+    const maxW = Math.max(230 * sc, VIEW_W - side * 2);
+    const boxW = Math.round(40 * sc), centerW = Math.round(70 * sc), padX = Math.round(10 * sc), strip = 4 * sc;
+    const nameF = Math.round(13 * sc), scoreF = Math.round(25 * sc), callF = Math.round(14 * sc), subF = Math.round(8.5 * sc);
+    ctx.save();
+    ctx.font = `800 ${nameF}px system-ui, sans-serif`;
+    const nameMax = Math.max(34, (maxW - centerW - boxW * 2 - padX * 4 - strip * 2) / 2);
+    const fit = (t) => {
+      if (ctx.measureText(t).width <= nameMax) return t;
+      let s = t;
+      while (s.length > 1 && ctx.measureText(s + '…').width > nameMax) s = s.slice(0, -1);
+      return s + '…';
+    };
+    const compact = nameMax < 74; // too narrow for names: show YOU / OPP captions on the score boxes
+    const leftName = compact ? '' : fit(teamShort('player')), rightName = compact ? '' : fit(teamShort('ai'));
+    const lw = compact ? -padX : Math.max(ctx.measureText(leftName).width, ctx.measureText(rightName).width, 36 * sc); // same width both sides
+    const W = centerW + 2 * (strip + padX * 2 + lw + boxW);
+    const x0 = Math.round(VIEW_W / 2 - W / 2);
+    const midY = top + H / 2;
+
+    // panel with a soft drop shadow
+    ctx.fillStyle = 'rgba(0,0,0,0.32)';
+    rr(x0 + 2, top + 3, W, H, rad); ctx.fill();
+    const bg = ctx.createLinearGradient(0, top, 0, top + H);
+    bg.addColorStop(0, '#1c2840'); bg.addColorStop(1, '#0d1420');
+    ctx.fillStyle = bg;
+    rr(x0, top, W, H, rad); ctx.fill();
+    // team colour strips at both ends
+    ctx.save();
+    rr(x0, top, W, H, rad); ctx.clip();
+    ctx.fillStyle = '#2f80ed'; ctx.fillRect(x0, top, strip, H);
+    ctx.fillStyle = '#e04848'; ctx.fillRect(x0 + W - strip, top, strip, H);
+    ctx.restore();
+    ctx.strokeStyle = 'rgba(255,255,255,0.14)'; ctx.lineWidth = 1;
+    rr(x0 + 0.5, top + 0.5, W - 1, H - 1, rad); ctx.stroke();
+
+    // names
+    ctx.textBaseline = 'middle';
+    ctx.fillStyle = '#ffffff';
+    ctx.textAlign = 'left';
+    ctx.fillText(leftName, x0 + strip + padX, midY + 0.5);
+    ctx.textAlign = 'right';
+    ctx.fillText(rightName, x0 + W - strip - padX, midY + 0.5);
+
+    // score boxes (the serving side's box gets a lime outline)
+    const boxH = H - 10 * sc, boxY = top + 5 * sc;
+    const boxL = x0 + strip + padX * 2 + lw, boxR = boxL + boxW + centerW;
+    const drawBox = (bx, value, color, serving) => {
+      ctx.fillStyle = color;
+      rr(bx, boxY, boxW, boxH, 7 * sc); ctx.fill();
+      if (serving) { ctx.strokeStyle = '#d7f23b'; ctx.lineWidth = 2 * sc; rr(bx + 1, boxY + 1, boxW - 2, boxH - 2, 6 * sc); ctx.stroke(); }
+      ctx.fillStyle = '#ffffff';
+      ctx.font = `900 ${compact ? Math.round(scoreF * 0.88) : scoreF}px system-ui, sans-serif`;
+      ctx.textAlign = 'center';
+      ctx.fillText(String(value), bx + boxW / 2, compact ? midY + 4 * sc : midY + 1);
+    };
+    drawBox(boxL, score.player, '#2f80ed', server === 'player');
+    drawBox(boxR, score.ai, '#d23c3c', server === 'ai');
+    if (compact) {
+      ctx.font = `900 ${subF}px system-ui, sans-serif`;
+      ctx.fillStyle = 'rgba(255,255,255,0.85)';
+      ctx.textAlign = 'center';
+      ctx.fillText('YOU', boxL + boxW / 2, boxY + subF * 0.9);
+      ctx.fillText('OPP', boxR + boxW / 2, boxY + subF * 0.9);
+    }
+
+    // centre: the official call (server first) and who serves
     let call = `${score[server]}–${score[other(server)]}`;
     if (mode === 'doubles') call += `–${serverNum}`;
-    ctx.save();
-    const fs = clamp(VIEW_H / 30, 13, 19);
-    ctx.font = `800 ${fs}px system-ui, sans-serif`;
-    ctx.textBaseline = 'middle';
-    const parts = [
-      { t: (server === 'player' ? '● ' : '') + you, c: '#ffffff' }, { t: String(score.player), c: '#3aa0ff' },
-      { t: call, c: '#d7f23b' },
-      { t: String(score.ai), c: '#ff5d5d' }, { t: bots + (server === 'ai' ? ' ●' : ''), c: '#ffffff' },
-    ];
-    const gap = fs * 0.75;
-    const widths = parts.map((p) => ctx.measureText(p.t).width);
-    const total = widths.reduce((a, b) => a + b, 0) + gap * (parts.length - 1) + fs * 1.8;
-    let x = VIEW_W / 2 - total / 2;
-    const bh = fs * 2;
-    ctx.fillStyle = 'rgba(10,16,26,0.72)';
-    rr(x, 8, total, bh, bh / 2);
-    ctx.fill();
-    x += fs * 0.9;
-    parts.forEach((p, i) => {
-      ctx.fillStyle = p.c;
-      ctx.textAlign = 'left';
-      ctx.fillText(p.t, x, 8 + bh / 2 + 0.5);
-      x += widths[i] + gap;
-    });
+    const cx = boxL + boxW + centerW / 2;
+    ctx.font = `900 ${callF}px system-ui, sans-serif`;
+    ctx.fillStyle = '#d7f23b';
+    ctx.textAlign = 'center';
+    ctx.fillText(call, cx, midY - 6 * sc);
+    ctx.font = `800 ${subF}px system-ui, sans-serif`;
+    ctx.fillStyle = '#9fb0c3';
+    ctx.fillText(server === 'player' ? '◀ SERVE' : 'SERVE ▶', cx, midY + 9 * sc);
     ctx.restore();
   }
 
@@ -2646,6 +2749,10 @@
     const x = 14 + shakeX, y = compactHud ? 52 : VIEW_H - h - 14;
     const pulse = 0.5 + 0.5 * Math.sin(clock * (armed ? 16 : 7));
     ctx.save();
+    // dark backing panel behind the label and bar so it reads cleanly over the wall
+    ctx.fillStyle = 'rgba(10,16,26,0.62)';
+    rr(x - 8, y - 22, w + 16, h + 30, 10);
+    ctx.fill();
     // labels
     ctx.font = '900 11px system-ui, sans-serif';
     ctx.textBaseline = 'bottom';
@@ -2788,7 +2895,7 @@
     drawBackWall();
     drawSideWalls();
     drawFloor();
-    drawScoreboard();
+    if (!compactHud) drawScoreboard(); // the on-screen scoreboard replaces it on touch landscape
     drawCourtSurface();
     drawLightPools();
     drawDividers();
@@ -2799,7 +2906,7 @@
   }
   function drawScenery() {
     const key = [VIEW_W, VIEW_H, curDpr, cam.f.toFixed(2), cam.hor.toFixed(2), quality,
-      score.player, score.ai, server, player.name, ai.name, ai2.name, mode].join('|');
+      score.player, score.ai, server, player.name, ai.name, ai2.name, mode, compactHud].join('|');
     if (key !== bgCache.key) {
       const m = Math.ceil(maxPan()) + 12;
       const W = VIEW_W + m * 2;

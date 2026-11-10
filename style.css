@@ -13,7 +13,9 @@
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
+/* The page itself never scrolls, bounces, pull-to-refreshes or zooms; menus scroll inside */
 html, body { height: 100%; overscroll-behavior: none; }
+html, body { position: fixed; inset: 0; overflow: hidden; touch-action: none; }
 
 body {
   background: radial-gradient(circle at 50% 0%, #1d2d44, #0b111a 70%);
@@ -194,8 +196,9 @@ body.touch .stage { max-width: none; border-radius: 12px; }
   transition: transform 0.12s ease-out;
   will-change: transform;
 }
-.joy-base.active .joy-knob { transition: none; }
-.joy-base.active { border-color: rgba(58, 160, 255, 0.5); }
+.joy-base { transition: transform 0.18s ease-out, opacity 0.2s; will-change: transform; }
+.joy-base.active, .joy-base.active .joy-knob { transition: none; }
+.joy-base.active { border-color: rgba(58, 160, 255, 0.6); }
 .pad-label { font-size: 10px; letter-spacing: 0.18em; color: var(--muted); }
 
 .pad-right {
@@ -253,7 +256,23 @@ body.touch .pad-right {
   }
   body.touch .stage { border-radius: 0; box-shadow: none; }
   body.touch .pad { position: absolute; bottom: 10px; z-index: 3; width: auto; height: auto; }
-  body.touch .pad-left { left: 12px; }
+  /* The lower-left part of the screen is the joystick area (touch anywhere there);
+     the stick itself rests centre-left, up from the bottom edge */
+  body.touch .pad-left {
+    display: block;
+    left: 0;
+    bottom: 0;
+    width: 42%;
+    height: 72%;
+    padding: 0;
+  }
+  body.touch .pad-left .joy-base {
+    position: absolute;
+    left: max(22px, 5vw);
+    bottom: max(44px, 31%); /* centre-left, well clear of the bottom edge */
+    opacity: 0.85;
+  }
+  body.touch .pad-left .joy-base.active { opacity: 1; }
   body.touch .pad-right { right: 12px; }
   body.touch .pad-label { display: none; }
   body.touch .joy-base { background: radial-gradient(circle, rgba(10, 16, 26, 0.35), rgba(10, 16, 26, 0.12) 70%); border-color: rgba(255, 255, 255, 0.3); }
@@ -411,6 +430,7 @@ body.touch .pad-right {
   overflow: auto;
   animation: fadeIn 0.3s ease-out;
 }
+.overlay { touch-action: pan-y; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; }
 .overlay.hidden { display: none; }
 @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 

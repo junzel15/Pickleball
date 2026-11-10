@@ -1,5 +1,5 @@
-// Offline support: cache the game files, serve from cache, refresh in the background.
-const CACHE = 'pickleball-v15';
+﻿// Offline support: cache the game files, serve from cache, refresh in the background.
+const CACHE = 'pickleball-v16';
 const ASSETS = [
   './',
   './index.html',
