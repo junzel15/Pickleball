@@ -232,24 +232,98 @@ body.touch .pad-right {
 .hud-mini { display: none; position: absolute; top: 8px; right: 8px; gap: 6px; z-index: 2; }
 .hud-mini .icon-btn { width: 32px; height: 32px; background: rgba(10, 16, 26, 0.6); backdrop-filter: blur(2px); }
 
-/* Touch devices held sideways: stick on the left, buttons on the right */
+/* Touch devices held sideways (phones and tablets): the court fills the whole
+   screen and the controls float over its bottom corners, like most mobile games.
+   The score, Menu and mute sit along the top of the court. */
 @media (orientation: landscape) {
-  body.touch #app { gap: 6px; padding-top: calc(6px + var(--safe-t)); padding-bottom: calc(6px + var(--safe-b)); }
-  body.touch .scoreboard { padding: 3px 10px; }
-  body.touch .team .score { font-size: 24px; }
-  body.touch .playarea {
-    grid-template-columns: auto minmax(0, 1fr) auto;
-    grid-template-rows: minmax(0, 1fr);
-    grid-template-areas: "left stage right";
+  :root {
+    --joy: clamp(100px, 27vmin, 170px);
+    --btn: clamp(50px, 14vmin, 84px);
+    --btn-big: clamp(72px, 21vmin, 120px);
   }
-  body.touch .pad-left, body.touch .pad-right { padding: 0 4px; }
-}
-/* Phones held sideways have little height: hide the top bar, score is drawn on the court */
-@media (orientation: landscape) and (max-height: 520px) {
+  body.touch #app { padding: var(--safe-t) var(--safe-r) var(--safe-b) var(--safe-l); gap: 0; }
   body.touch .scoreboard { display: none; }
   body.touch .hud-mini { display: flex; }
-  body.touch #app { padding-top: calc(4px + var(--safe-t)); padding-bottom: calc(4px + var(--safe-b)); }
+  body.touch .playarea {
+    position: relative;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr);
+    grid-template-areas: "stage";
+    gap: 0;
+  }
+  body.touch .stage { border-radius: 0; box-shadow: none; }
+  body.touch .pad { position: absolute; bottom: 10px; z-index: 3; width: auto; height: auto; }
+  body.touch .pad-left { left: 12px; }
+  body.touch .pad-right { right: 12px; }
   body.touch .pad-label { display: none; }
+  body.touch .joy-base { background: radial-gradient(circle, rgba(10, 16, 26, 0.35), rgba(10, 16, 26, 0.12) 70%); border-color: rgba(255, 255, 255, 0.3); }
+  body.touch .shot { opacity: 0.93; }
+  /* POWER sits just above the shot buttons */
+  body.touch .power-btn { right: 14px; bottom: calc(10px + var(--btn) * 2 + 26px); }
+  /* no controls on top of menus, pause or game over */
+  body.touch.ui-overlay .pad { display: none; }
+}
+
+/* Short landscape screens (phones): compact, two-column menus */
+@media (orientation: landscape) and (max-height: 560px) {
+  .overlay { padding: 8px; }
+  /* two newspaper-style columns: content flows down the left, then the right */
+  #menu .card {
+    max-width: 660px;
+    column-count: 2;
+    column-gap: 22px;
+    padding: 12px 16px;
+  }
+  #menu .card > * { break-inside: avoid; }
+  #menu .logo { display: none; }
+  #menu h1 { font-size: 26px; line-height: 1.1; }
+  #menu .tagline { font-size: 12px; margin: 2px 0 4px; }
+  #menu .label { margin-top: 8px; }
+  #menu .diff { margin: 6px 0 8px; }
+  #menu .diff button { padding: 7px 0; }
+  #menu .diff.mode button { padding: 5px 0 4px; }
+  #menu .profile-chip { margin: 6px 0 0; }
+  #menu .toggle { margin: 4px 0 8px; }
+  #menu #startBtn { display: block; width: 100%; padding: 10px 0; }
+  #menu .btn.big { animation: none; }
+  #menu details { margin-top: 6px; }
+  .settings-card { max-width: 760px; padding: 12px 14px; }
+  .settings-card #avatarOptions { grid-template-columns: 1fr 1fr; column-gap: 16px; }
+  .tabs { margin: 8px 0; }
+}
+
+/* "Rotate your device" screen for touch devices held upright */
+.rotate-hint {
+  position: fixed;
+  inset: 0;
+  z-index: 900; /* under the loading screen, over everything else */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  text-align: center;
+  background: radial-gradient(circle at 50% 35%, rgba(46, 120, 194, 0.35), transparent 60%), radial-gradient(circle at 50% 0%, #1d2d44, #0b111a 75%);
+}
+.rotate-hint[hidden] { display: none; }
+.rh-inner { max-width: 320px; }
+.rh-inner h2 { margin: 18px 0 6px; }
+.rh-inner p { color: var(--muted); font-size: 14px; margin-bottom: 18px; line-height: 1.4; }
+.rh-inner .btn { display: block; width: 100%; margin-top: 10px; }
+.rh-phone {
+  width: 56px;
+  height: 96px;
+  margin: 0 auto;
+  border: 4px solid var(--text);
+  border-radius: 12px;
+  position: relative;
+  animation: rhTurn 2.4s ease-in-out infinite;
+}
+.rh-phone span { position: absolute; left: 50%; bottom: 6px; width: 12px; height: 4px; margin-left: -6px; border-radius: 2px; background: var(--text); }
+.rh-phone::before { content: ""; position: absolute; inset: 8px 6px 16px; border-radius: 4px; background: linear-gradient(135deg, #2e78c2, #1f5c9e); }
+@keyframes rhTurn {
+  0%, 20% { transform: rotate(0deg); }
+  50%, 75% { transform: rotate(-90deg); }
+  100% { transform: rotate(0deg); }
 }
 
 /* Phones: keep the scoreboard inside the screen width */

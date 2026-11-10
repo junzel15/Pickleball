@@ -36,6 +36,17 @@
     </div>
   </div>
 
+  <!-- Shown on phones/tablets held upright: the game is designed for landscape -->
+  <div id="rotateHint" class="rotate-hint" hidden>
+    <div class="rh-inner">
+      <div class="rh-phone"><span></span></div>
+      <h2>Rotate your device</h2>
+      <p>Pickleball plays best in landscape. Turn your phone or tablet sideways.</p>
+      <button class="btn" id="rhLock" hidden>↻ Switch to landscape</button>
+      <button class="btn secondary small" id="rhPortrait">Rotation locked? Play in portrait</button>
+    </div>
+  </div>
+
   <div id="app">
     <header class="scoreboard">
       <button class="icon-btn menu-btn" id="pauseBtn" aria-label="Open the game menu">☰ Menu</button>

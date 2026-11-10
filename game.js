@@ -111,12 +111,12 @@
     if (canvas.width !== bw || canvas.height !== bh) { canvas.width = bw; canvas.height = bh; }
     curDpr = dpr;
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    fitCamera();
+    compactHud = document.body.classList.contains('touch') && window.matchMedia('(orientation: landscape)').matches;
+    fitCamera(); // uses compactHud to keep the court clear of the floating controls
     bgCache.key = ''; // scenery must be redrawn for the new size
     vignette = null;
-    compactHud = document.body.classList.contains('touch') && window.matchMedia('(orientation: landscape) and (max-height: 520px)').matches;
   }
-  let compactHud = false; // phone held sideways: score is drawn on the court instead of the top bar
+  let compactHud = false; // touch device held sideways: full-screen court, score drawn on it, controls float over it
   // Coalesce bursts of resize events (rotation, address bar showing/hiding) into one per frame
   let resizeQueued = false;
   function queueResize() {
@@ -1466,7 +1466,10 @@
     const dN = cam.y - nearY, dF = cam.y - farY;
     const top = lerp(0.38, 0.3, t), bot = lerp(0.985, 0.99, t);
     const fV = ((bot - top) * H) / (cam.h / dN - cam.h / dF);
-    const fW = (0.98 * W * (cam.y - 46)) / 27; // keep both sidelines (+ run-off) on screen
+    // keep both sidelines (+ run-off) on screen; with floating touch controls,
+    // leave room at the sides so the joystick and buttons don't cover the near corners
+    const reserve = compactHud ? Math.min(W * 0.18, 175) * (W < 640 ? 1.9 : 1.5) : 0; // tiny phones need more room
+    const fW = (0.98 * (W - reserve) * (cam.y - 46)) / 27;
     cam.f = Math.min(fV, fW);
     cam.hor = bot * H - (cam.h * cam.f) / dN;
     cam.cx = W / 2;
@@ -2607,25 +2610,27 @@
     let call = `${score[server]}–${score[other(server)]}`;
     if (mode === 'doubles') call += `–${serverNum}`;
     ctx.save();
-    ctx.font = '800 13px system-ui, sans-serif';
+    const fs = clamp(VIEW_H / 30, 13, 19);
+    ctx.font = `800 ${fs}px system-ui, sans-serif`;
     ctx.textBaseline = 'middle';
     const parts = [
       { t: (server === 'player' ? '● ' : '') + you, c: '#ffffff' }, { t: String(score.player), c: '#3aa0ff' },
       { t: call, c: '#d7f23b' },
       { t: String(score.ai), c: '#ff5d5d' }, { t: bots + (server === 'ai' ? ' ●' : ''), c: '#ffffff' },
     ];
-    const gap = 10;
+    const gap = fs * 0.75;
     const widths = parts.map((p) => ctx.measureText(p.t).width);
-    const total = widths.reduce((a, b) => a + b, 0) + gap * (parts.length - 1) + 24;
+    const total = widths.reduce((a, b) => a + b, 0) + gap * (parts.length - 1) + fs * 1.8;
     let x = VIEW_W / 2 - total / 2;
+    const bh = fs * 2;
     ctx.fillStyle = 'rgba(10,16,26,0.72)';
-    rr(x, 8, total, 26, 13);
+    rr(x, 8, total, bh, bh / 2);
     ctx.fill();
-    x += 12;
+    x += fs * 0.9;
     parts.forEach((p, i) => {
       ctx.fillStyle = p.c;
       ctx.textAlign = 'left';
-      ctx.fillText(p.t, x, 21.5);
+      ctx.fillText(p.t, x, 8 + bh / 2 + 0.5);
       x += widths[i] + gap;
     });
     ctx.restore();
@@ -2638,7 +2643,7 @@
     const full = energy.value >= 100, armed = energy.armed > 0;
     const w = clamp(VIEW_W * 0.3, 120, 210), h = 12;
     const shakeX = energy.denied > 0 ? Math.sin(clock * 80) * 5 * (energy.denied / 0.45) : 0;
-    const x = 14 + shakeX, y = VIEW_H - h - 14;
+    const x = 14 + shakeX, y = compactHud ? 52 : VIEW_H - h - 14;
     const pulse = 0.5 + 0.5 * Math.sin(clock * (armed ? 16 : 7));
     ctx.save();
     // labels
@@ -2693,7 +2698,10 @@
   }
 
   // Touch POWER button: its ring shows the charge
+  let overlayShown = null;
   function syncPowerButton() {
+    const overlayUp = state === 'menu' || state === 'paused' || state === 'over' || PB.isOpen();
+    if (overlayUp !== overlayShown) { overlayShown = overlayUp; document.body.classList.toggle('ui-overlay', overlayUp); }
     const btn = $('powerBtn');
     const st = state === 'paused' ? pausedFrom : state;
     const show = st === 'serve' || st === 'rally' || st === 'point';
@@ -2932,19 +2940,27 @@
     $('hudMute').textContent = ui.muteBtn.textContent;
   }
 
+  // Go full-screen and lock to landscape where the browser allows it (Android).
+  // Must be called from a tap. iPhone/iPad don't allow this; they get the rotate screen.
+  function lockLandscape() {
+    try {
+      if (screen.orientation && screen.orientation.lock) screen.orientation.lock('landscape').catch(() => {});
+    } catch (e) { /* ignore */ }
+  }
   function goFullscreen() {
-    if (!isTouch || isStandalone()) return;
+    if (!isTouch) return;
+    if (isStandalone()) { lockLandscape(); return; }
     const el = document.documentElement;
     const req = el.requestFullscreen || el.webkitRequestFullscreen;
     if (req && !document.fullscreenElement && !document.webkitFullscreenElement) {
       try {
-        const p = req.call(el);
-        if (p && p.catch) p.catch(() => {});
+        const p = req.call(el, { navigationUI: 'hide' });
+        if (p && p.then) p.then(lockLandscape, () => {}); // the lock only works once full-screen
+        else lockLandscape();
       } catch (e) { /* not allowed (e.g. iPhone Safari) */ }
+    } else {
+      lockLandscape();
     }
-    try {
-      if (screen.orientation && screen.orientation.lock) screen.orientation.lock('portrait').catch(() => {});
-    } catch (e) { /* ignore */ }
   }
 
   // Set up who is on court for the chosen mode and stand them in their courts.
@@ -3101,6 +3117,44 @@
   const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent) ||
     (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
   if (isIOS && !isStandalone()) $('iosTip').hidden = false;
+
+  // =====================================================================
+  //  Landscape on phones and tablets
+  //  Android: Play (or "Switch to landscape") goes full-screen and locks landscape;
+  //  an installed app opens in landscape. iPhone/iPad can't be rotated by a website,
+  //  so held upright they show a "Rotate your device" screen (with a portrait escape
+  //  hatch for people who keep rotation locked).
+  // =====================================================================
+  const rotateUI = { el: $('rotateHint'), dismissed: false, autoPaused: false };
+  try { rotateUI.dismissed = sessionStorage.getItem('pb.portraitOK') === '1'; } catch (e) { /* ignore */ }
+  const de = document.documentElement;
+  const canLock = !isIOS && !!(screen.orientation && screen.orientation.lock) && !!(de.requestFullscreen || de.webkitRequestFullscreen);
+  $('rhLock').hidden = !canLock;
+
+  function checkOrientation() {
+    const portrait = window.matchMedia('(orientation: portrait)').matches;
+    const show = document.body.classList.contains('touch') && portrait && !rotateUI.dismissed;
+    rotateUI.el.hidden = !show;
+    if (show && (state === 'serve' || state === 'rally' || state === 'point')) {
+      togglePause(); // don't keep playing behind the rotate screen
+      rotateUI.autoPaused = true;
+    } else if (!show && rotateUI.autoPaused) {
+      rotateUI.autoPaused = false;
+      if (state === 'paused') togglePause(); // turned back sideways: carry on
+    }
+  }
+  const portraitMQ = window.matchMedia('(orientation: portrait)');
+  if (portraitMQ.addEventListener) portraitMQ.addEventListener('change', checkOrientation);
+  else if (portraitMQ.addListener) portraitMQ.addListener(checkOrientation);
+  window.addEventListener('resize', checkOrientation);
+  window.addEventListener('touchstart', () => setTimeout(checkOrientation, 0), { passive: true, once: true });
+  $('rhLock').addEventListener('click', () => { ensureAudio(); goFullscreen(); });
+  $('rhPortrait').addEventListener('click', () => {
+    rotateUI.dismissed = true;
+    try { sessionStorage.setItem('pb.portraitOK', '1'); } catch (e) { /* ignore */ }
+    checkOrientation();
+  });
+  checkOrientation();
 
   if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
     window.addEventListener('load', () => {
