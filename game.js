@@ -262,7 +262,8 @@
   }
   const teamVerb = () => (mode === 'doubles' ? 'win' : 'wins');
 
-  let mode = 'singles'; // 'singles' | 'doubles'
+  let mode = 'singles'; // 'singles' | 'doubles' (the match being played)
+  let selectedMode = 'singles'; // what the main menu has selected for the next game
   let roster = [player, ai];
   const teamOf = (team) => roster.filter((a) => a.team === team);
   const partnerOf = (a) => roster.find((b) => b.team === a.team && b !== a) || a;
@@ -497,7 +498,7 @@
   window.addEventListener('keydown', (e) => {
     // Let people type their name without moving the player
     if (e.target instanceof HTMLElement && e.target.matches('input, textarea')) return;
-    if (PB.isOpen()) { if (e.code === 'Escape') PB.closeSettings(); return; }
+    if (PB.isOpen()) { if (e.code === 'Escape') goBack(); return; }
     const loader = document.getElementById('loader');
     if (loader && !loader.classList.contains('done')) return; // still loading
     if (KEYMAP[e.code]) { held.add(KEYMAP[e.code]); e.preventDefault(); }
@@ -505,7 +506,8 @@
       e.preventDefault();
       if (!e.repeat) action(ACTIONS[e.code]);
     }
-    if (e.code === 'KeyP' || e.code === 'Escape') togglePause();
+    if (e.code === 'Escape') goBack();
+    if (e.code === 'KeyP') togglePause();
     if (e.code === 'KeyM' && !e.repeat) activateSmash(); // Smash Skill
     if (e.code === 'KeyN') toggleMute();
     if (e.code === 'Enter' && state === 'menu') startGame();
@@ -3038,7 +3040,7 @@
     refreshProfileChip();
     updateHUD();
   });
-  $('profileChip').addEventListener('click', () => { ensureAudio(); PB.openSettings(); });
+  $('profileChip').addEventListener('click', () => { ensureAudio(); PB.openSettings(); armBackButton(); });
 
   function toggleMute() {
     muted = !muted;
@@ -3090,10 +3092,12 @@
     hush();
     goFullscreen();
     freshGame = true;
+    setSuspended(false); // a new game replaces any paused match
+    armBackButton();
     AI = DIFFICULTY[difficulty];
     ai.skill = AI;
     ai2.skill = AI;
-    setMode(mode);
+    setMode(selectedMode);
     assignBotNames(); // fresh opponents (and partner) every game
     resetEnergy();
     score.player = 0;
@@ -3137,6 +3141,7 @@
   }
 
   function togglePause() {
+    if (mainMenuOverGame()) return; // the main menu is open over a paused match: use ← instead
     if (state === 'paused') {
       state = pausedFrom;
       ui.pauseMenu.classList.add('hidden');
@@ -3147,11 +3152,67 @@
       held.clear();
       releaseJoystick();
       ui.pauseMenu.classList.remove('hidden');
+      armBackButton();
     }
   }
 
+  // ---------- navigation: every screen has a ← back arrow ----------
+  // "Main menu" from the in-game Menu keeps the match paused behind it, so ← can
+  // bring you back to the in-game Menu and Resume. Starting a new game replaces it.
+  let suspended = false; // a match is paused behind the main menu
+  const mainMenuOverGame = () => suspended && !ui.menu.classList.contains('hidden');
+
+  function setSuspended(on) {
+    suspended = on;
+    $('menuBack').hidden = !on;
+    $('resumeNote').hidden = !on;
+    $('startBtn').textContent = on ? 'New game' : 'Play';
+  }
+
+  // In-game Menu -> Main menu (the match stays paused)
+  function openMainMenuFromGame() {
+    if (state !== 'paused') { toMenu(); return; }
+    ui.pauseMenu.classList.add('hidden');
+    ui.menu.classList.remove('hidden');
+    setSuspended(true);
+    hush();
+    setHint('Your match is paused · Back returns to it, New game starts over');
+    armBackButton();
+  }
+  // Main menu -> back to the in-game Menu (Resume, Customize, Restart, Main menu)
+  function backToGameMenu() {
+    ui.menu.classList.add('hidden');
+    ui.pauseMenu.classList.remove('hidden');
+    setSuspended(false);
+    setHint('Move: WASD / Arrows · Space/J drive · K dink · L lob · M smash skill (when ⚡ is full) · hold ←/→ to aim');
+  }
+
+  // One "go back" used by every ← arrow, the Esc key and the phone's back button.
+  // Returns true when there was somewhere to go back to.
+  function goBack() {
+    if (PB.isOpen()) { PB.saveAndClose(); return true; }               // Customize -> previous screen
+    if (mainMenuOverGame()) { backToGameMenu(); return true; }          // Main menu -> in-game Menu
+    if (state === 'paused') { togglePause(); return true; }             // in-game Menu -> game
+    if (state === 'over') { toMenu(); return true; }                     // Game over -> main menu
+    if (state === 'serve' || state === 'rally' || state === 'point') { togglePause(); return true; } // play -> in-game Menu
+    return false;                                                        // main menu with no game: nothing to go back to
+  }
+
+  // The phone's back button / gesture steps back through the screens instead of
+  // leaving the site (one extra history entry acts as a catch).
+  let backArmed = false;
+  function armBackButton() {
+    if (backArmed) return;
+    try { history.pushState({ pickleball: true }, ''); backArmed = true; } catch (e) { /* ignore */ }
+  }
+  window.addEventListener('popstate', () => {
+    backArmed = false;
+    if (goBack()) armBackButton();
+  });
+
   function toMenu() {
     state = 'menu';
+    setSuspended(false);
     hush();
     energy.armed = 0;
     for (const r of refs) { r.bubble = null; r.pose = 'idle'; }
@@ -3159,7 +3220,7 @@
     ui.gameOver.classList.add('hidden');
     ui.menu.classList.remove('hidden');
     ball.held = true;
-    setMode(mode);
+    setMode(selectedMode);
     hideBanner();
     setHint('Choose a mode and difficulty, then press Play');
   }
@@ -3174,23 +3235,28 @@
     });
   }
   bindChoice('diff', (v) => { difficulty = v; });
-  bindChoice('mode', (v) => { setMode(v); updateHUD(); });
+  bindChoice('mode', (v) => {
+    selectedMode = v;
+    if (!suspended) { setMode(v); updateHUD(); } // don't disturb a paused match
+  });
 
   $('startBtn').addEventListener('click', startGame);
   $('againBtn').addEventListener('click', startGame);
   $('menuBtn').addEventListener('click', toMenu);
   $('resumeBtn').addEventListener('click', togglePause);
-  $('quitBtn').addEventListener('click', toMenu);
+  $('quitBtn').addEventListener('click', openMainMenuFromGame);
+  // ← back arrows on every screen
+  $('menuBack').addEventListener('click', goBack);
   // "Menu" button: opens the in-game menu (Resume / Customize / Restart / Main menu)
   function menuButton() {
     ensureAudio();
-    if (state === 'menu' || PB.isOpen()) return;   // already on a menu screen
+    if (state === 'menu' || PB.isOpen() || mainMenuOverGame()) return; // already on a menu screen
     if (state === 'over') { toMenu(); return; }
     togglePause();
   }
   $('pauseBtn').addEventListener('click', menuButton);
   $('hudPause').addEventListener('click', menuButton);
-  $('pmCustomize').addEventListener('click', () => PB.openSettings());
+  $('pmCustomize').addEventListener('click', () => { PB.openSettings(); armBackButton(); });
   $('powerBtn').addEventListener('pointerdown', (e) => { e.preventDefault(); activateSmash(); });
   $('restartBtn').addEventListener('click', () => startGame());
   $('hudMute').addEventListener('click', () => { ensureAudio(); toggleMute(); });
@@ -3264,8 +3330,18 @@
   checkOrientation();
 
   if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
+    // When a new version of the game is installed, reload once so it's used straight away
+    // (only if an older version was controlling the page, and never in the middle of a match).
+    const hadController = !!navigator.serviceWorker.controller;
+    let reloaded = false;
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+      if (!hadController || reloaded) return;
+      if (state === 'menu') { reloaded = true; location.reload(); }
+    });
     window.addEventListener('load', () => {
-      navigator.serviceWorker.register('sw.js').catch(() => {});
+      navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' })
+        .then((reg) => reg.update())
+        .catch(() => {});
     });
   }
 

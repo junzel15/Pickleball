@@ -1546,14 +1546,9 @@
       renderPortrait();
     });
 
-    $('settingsDone').addEventListener('click', () => {
-      draft.name = cleanName($('nameInput').value);
-      profile = clone(draft);
-      saveProfile(profile);
-      listeners.forEach((fn) => fn(clone(profile)));
-      closeSettings();
-    });
-    $('settingsClose').addEventListener('click', closeSettings);
+    $('settingsDone').addEventListener('click', saveAndClose);
+    // ← keeps your changes and returns to the screen you came from
+    $('settingsBack').addEventListener('click', saveAndClose);
     $('nameInput').addEventListener('keydown', (e) => {
       if (e.key === 'Enter') { e.preventDefault(); $('settingsDone').click(); }
     });
@@ -1569,6 +1564,15 @@
     renderPaddleFeature();
     $('settings').classList.remove('hidden');
   }
+  function saveAndClose() {
+    if (!built || !isOpenNow()) return;
+    draft.name = cleanName($('nameInput').value);
+    profile = clone(draft);
+    saveProfile(profile);
+    listeners.forEach((fn) => fn(clone(profile)));
+    closeSettings();
+  }
+  const isOpenNow = () => !$('settings').classList.contains('hidden');
   function closeSettings() {
     $('settings').classList.add('hidden');
   }
@@ -1588,6 +1592,7 @@
     onChange: (fn) => listeners.push(fn),
     openSettings,
     closeSettings,
+    saveAndClose,
     isOpen: () => !$('settings').classList.contains('hidden'),
   };
 })();

@@ -1,5 +1,7 @@
-﻿// Offline support: cache the game files, serve from cache, refresh in the background.
-const CACHE = 'pickleball-v16';
+﻿// Offline support.
+// Network first: when online you always get the newest version of the game;
+// the saved copy is only used when there is no connection.
+const CACHE = 'pickleball-v19';
 const ASSETS = [
   './',
   './index.html',
@@ -29,15 +31,14 @@ self.addEventListener('fetch', (event) => {
   if (req.method !== 'GET' || new URL(req.url).origin !== location.origin) return;
 
   event.respondWith(
-    caches.open(CACHE).then(async (cache) => {
-      const cached = await cache.match(req, { ignoreSearch: true });
-      const network = fetch(req)
-        .then((res) => {
-          if (res && res.ok) cache.put(req, res.clone());
-          return res;
-        })
-        .catch(() => cached);
-      return cached || network;
-    })
+    fetch(req, { cache: 'no-cache' }) // ask the server for the latest file
+      .then((res) => {
+        if (res && res.ok) {
+          const copy = res.clone();
+          caches.open(CACHE).then((c) => c.put(req, copy));
+        }
+        return res;
+      })
+      .catch(() => caches.match(req, { ignoreSearch: true }).then((hit) => hit || caches.match('./index.html')))
   );
 });

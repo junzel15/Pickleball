@@ -89,9 +89,11 @@
         <!-- Main menu -->
         <div class="overlay" id="menu">
           <div class="card">
+            <button class="back-btn" id="menuBack" type="button" aria-label="Back to your paused match" title="Back to your match" hidden><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Back</span></button>
             <div class="logo"><span class="logo-ball"></span></div>
             <h1>Pickleball</h1>
             <p class="tagline">Play computer opponents · First to 11, win by 2</p>
+            <p class="resume-note" id="resumeNote" hidden>⏸ Your match is paused. Tap ‹ Back to return to it and resume.</p>
 
             <button class="profile-chip" id="profileChip" type="button" aria-label="Customize your player and paddle">
               <canvas id="chipPortrait"></canvas>
@@ -159,6 +161,7 @@
                 <li>The referees call close balls <b>“Inside”</b>, <b>“Out”</b>, faults and kitchen violations, and announce the score (server's score first) before every serve.</li>
               </ul>
             </details>
+            <p class="version-tag">Version 19</p>
           </div>
         </div>
 
@@ -166,8 +169,8 @@
         <div class="overlay hidden" id="settings">
           <div class="card settings-card">
             <div class="settings-head">
+              <button class="back-btn inline" id="settingsBack" type="button" aria-label="Back (keeps your changes)" title="Back (keeps your changes)"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Back</span></button>
               <h2>Customize</h2>
-              <button class="icon-btn" id="settingsClose" aria-label="Close without saving">✕</button>
             </div>
             <div class="tabs" id="settingsTabs">
               <button data-tab="avatar" class="active">Player</button>
