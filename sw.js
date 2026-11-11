@@ -1,44 +1,13 @@
-﻿// Offline support.
-// Network first: when online you always get the newest version of the game;
-// the saved copy is only used when there is no connection.
-const CACHE = 'pickleball-v20';
-const ASSETS = [
-  './',
-  './index.html',
-  './style.css',
-  './customize.js',
-  './game.js',
-  './manifest.webmanifest',
-  './icons/icon-192.png',
-  './icons/icon-512.png',
-  './icons/apple-touch-icon.png',
-];
-
-self.addEventListener('install', (event) => {
-  event.waitUntil(caches.open(CACHE).then((c) => c.addAll(ASSETS)).then(() => self.skipWaiting()));
-});
-
+// The game that used to live here installed this service worker for offline play.
+// The site is now a landing page, so this version removes itself and clears the
+// old cached game files, so returning visitors get the new page.
+self.addEventListener('install', () => self.skipWaiting());
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys()
-      .then((keys) => Promise.all(keys.filter((k) => k !== CACHE).map((k) => caches.delete(k))))
-      .then(() => self.clients.claim())
-  );
-});
-
-self.addEventListener('fetch', (event) => {
-  const req = event.request;
-  if (req.method !== 'GET' || new URL(req.url).origin !== location.origin) return;
-
-  event.respondWith(
-    fetch(req, { cache: 'no-cache' }) // ask the server for the latest file
-      .then((res) => {
-        if (res && res.ok) {
-          const copy = res.clone();
-          caches.open(CACHE).then((c) => c.put(req, copy));
-        }
-        return res;
-      })
-      .catch(() => caches.match(req, { ignoreSearch: true }).then((hit) => hit || caches.match('./index.html')))
+      .then((keys) => Promise.all(keys.map((k) => caches.delete(k))))
+      .then(() => self.registration.unregister())
+      .then(() => self.clients.matchAll({ type: 'window' }))
+      .then((clients) => clients.forEach((c) => c.navigate(c.url)))
   );
 });

@@ -2,285 +2,372 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-  <title>Pickleball</title>
-  <meta name="description" content="Singles pickleball vs the CPU — dinks, drives, lobs and the kitchen.">
-  <meta name="theme-color" content="#0f1722">
-
-  <!-- Installable app (PWA) -->
-  <link rel="manifest" href="manifest.webmanifest">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Pickleball Hyper: Download for Android</title>
+  <meta name="description" content="Pickleball Hyper is a fast, arcade-style pickleball game for Android. Drive, dink, lob and unleash the Smash Skill in singles or doubles. Download the free APK.">
+  <meta name="theme-color" content="#070d16">
+  <meta property="og:title" content="Pickleball Hyper: Rally harder. Dink smarter.">
+  <meta property="og:description" content="Fast, arcade-style pickleball for Android. Singles & doubles, real rules, 12 paddles, and the Smash Skill.">
+  <meta property="og:image" content="icons/icon-512.png">
+  <meta property="og:type" content="website">
   <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
-  <meta name="mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="apple-mobile-web-app-title" content="Pickleball">
-
-  <link rel="stylesheet" href="style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,600..900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css?v=4">
 </head>
 <body>
-  <!-- Loading screen: shown instantly, removed by game.js when everything is ready -->
-  <div id="loader" aria-busy="true">
-    <div class="ld-inner">
-      <div class="ld-scene" aria-hidden="true">
-        <div class="ld-ball"></div>
-        <div class="ld-shadow"></div>
-        <div class="ld-paddle"><span class="ld-face"></span><span class="ld-handle"></span></div>
-      </div>
-      <h1 class="ld-title">Pickleball</h1>
-      <div class="ld-bar" role="progressbar" aria-label="Loading" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="loadBarWrap">
-        <div class="ld-fill" id="loadBar"></div>
-      </div>
-      <div class="ld-status" id="loadStatus" role="status" aria-live="polite">Loading…</div>
-      <p class="ld-tip" id="loadTip">Tip: Let the serve and the return bounce — that's the two-bounce rule.</p>
+
+  <!-- ============ NAV ============ -->
+  <header class="nav" id="nav">
+    <div class="wrap nav-inner">
+      <a href="#top" class="brand" aria-label="Pickleball Hyper home">
+        <img src="icons/icon-192.png" alt="" width="36" height="36">
+        <span>Pickleball <em>Hyper</em></span>
+      </a>
+      <nav class="nav-links" aria-label="Sections">
+        <a href="#features">Features</a>
+        <a href="#shots">Shots</a>
+        <a href="#paddles">Paddles</a>
+        <a href="#install">How to install</a>
+        <a href="#faq">FAQ</a>
+      </nav>
+      <a class="btn btn-sm js-download" href="download/PickleballHyper.apk" download="PickleballHyper.apk">
+        <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m0 0l-5-5m5 5l5-5M4 19h16"/></svg>
+        <span>Get the APK</span>
+      </a>
     </div>
-  </div>
+  </header>
 
-  <!-- Shown on phones/tablets held upright: the game is designed for landscape -->
-  <div id="rotateHint" class="rotate-hint" hidden>
-    <div class="rh-inner">
-      <div class="rh-phone"><span></span></div>
-      <h2>Rotate your device</h2>
-      <p>Pickleball plays best in landscape. Turn your phone or tablet sideways.</p>
-      <button class="btn" id="rhLock" hidden>↻ Switch to landscape</button>
-      <button class="btn secondary small" id="rhPortrait">Rotation locked? Play in portrait</button>
-    </div>
-  </div>
+  <main id="top">
 
-  <!-- Android, held sideways: choose to install the app or play in the browser -->
-  <div id="launchChooser" class="launch" hidden>
-    <div class="lc-inner">
-      <img src="icons/icon-192.png" alt="" class="lc-icon" width="56" height="56">
-      <h2>How do you want to play?</h2>
-      <div class="lc-options">
-        <button class="lc-opt lc-install" id="lcInstall" type="button">
-          <span class="lc-sym" aria-hidden="true">⬇</span>
-          <b>Install App</b>
-          <small>Add Pickleball to your home screen. Opens full-screen and works offline.</small>
-        </button>
-        <button class="lc-opt lc-browser" id="lcBrowser" type="button">
-          <span class="lc-sym" aria-hidden="true">▶</span>
-          <b>Play in Browser</b>
-          <small>Start right away — nothing to install.</small>
-        </button>
-      </div>
-      <p class="lc-help" id="lcHelp" hidden>
-        To install, tap Chrome's <b>⋮</b> menu (top-right), then <b>Install app</b> or <b>Add to Home screen</b>.
-        Or tap <b>Play in Browser</b> to start now.
-      </p>
-    </div>
-  </div>
+    <!-- ============ HERO ============ -->
+    <section class="hero">
+      <div class="hero-glow" aria-hidden="true"></div>
+      <div class="hero-grid-bg" aria-hidden="true"></div>
+      <svg class="hero-court" viewBox="0 0 1200 600" preserveAspectRatio="none" aria-hidden="true">
+        <g fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M200 600 L420 140 L780 140 L1000 600"/>
+          <path d="M318 354 L882 354"/>
+          <path d="M600 140 L600 290 M600 420 L600 600"/>
+          <path d="M282 430 L918 430"/>
+        </g>
+      </svg>
 
-  <div id="app">
-    <header class="scoreboard">
-      <button class="icon-btn menu-btn" id="pauseBtn" aria-label="Open the game menu">☰ Menu</button>
-      <div class="team you">
-        <span class="serve-dot" id="dotYou"></span>
-        <span class="name" id="nameYou">You</span>
-        <span class="score" id="scoreYou">0</span>
-      </div>
-      <div class="center">
-        <div class="call" id="call">0 – 0</div>
-        <div class="sub" id="subcall">Game to 11 · win by 2</div>
-      </div>
-      <div class="team cpu">
-        <span class="score" id="scoreCpu">0</span>
-        <span class="name" id="nameCpu">Bot Player 1</span>
-        <span class="serve-dot" id="dotCpu"></span>
-      </div>
-      <button class="icon-btn" id="muteBtn" aria-label="Mute">🔊</button>
-    </header>
+      <div class="wrap hero-inner">
+        <div class="hero-copy">
+          <p class="eyebrow"><span class="dot"></span> Now on Android · Free download</p>
+          <h1 class="display">
+            Rally harder. <span class="hl">Dink smarter.</span><br>
+            Play <span class="outline">Hyper.</span>
+          </h1>
+          <p class="lede">
+            Fast, arcade-style pickleball in your pocket. Read the bounce, own the kitchen,
+            then unleash a <b>Smash Skill</b> nobody can return.
+          </p>
 
-    <main class="playarea">
-      <!-- Touch: virtual joystick -->
-      <div class="pad pad-left" id="joyZone">
-        <div class="joy-base" id="joyBase">
-          <div class="joy-ring"></div>
-          <div class="joy-knob" id="joyKnob"></div>
-        </div>
-        <span class="pad-label">MOVE · AIM</span>
-      </div>
-
-      <div class="stage" id="stage">
-        <canvas id="court"></canvas>
-        <div class="hud-mini" id="hudMini">
-          <button class="icon-btn menu-btn" id="hudPause" aria-label="Open the game menu">☰ Menu</button>
-          <button class="icon-btn" id="hudMute" aria-label="Mute">🔊</button>
-        </div>
-        <button class="power-btn off" id="powerBtn" aria-label="Smash Skill (needs a full energy bar)"><span>POWER</span></button>
-        <div class="banner" id="banner"></div>
-
-        <!-- Main menu -->
-        <div class="overlay" id="menu">
-          <div class="card">
-            <button class="back-btn" id="menuBack" type="button" aria-label="Back to your paused match" title="Back to your match" hidden><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Back</span></button>
-            <div class="logo"><span class="logo-ball"></span></div>
-            <h1>Pickleball</h1>
-            <p class="tagline">Play computer opponents · First to 11, win by 2</p>
-            <p class="resume-note" id="resumeNote" hidden>⏸ Your match is paused. Tap ‹ Back to return to it and resume.</p>
-
-            <button class="profile-chip" id="profileChip" type="button" aria-label="Customize your player and paddle">
-              <canvas id="chipPortrait"></canvas>
-              <span class="pc-text">
-                <b id="chipName">Player</b>
-                <small id="chipPaddle">Paddle</small>
+          <div class="cta-block">
+            <a class="btn btn-xl js-download" href="download/PickleballHyper.apk" download="PickleballHyper.apk">
+              <svg class="ico android" viewBox="0 0 24 24" aria-hidden="true"><path d="M7.2 8.6h9.6a.8.8 0 0 1 .8.8v6.7a1 1 0 0 1-1 1h-.9v2.3a1.1 1.1 0 0 1-2.2 0v-2.3h-3v2.3a1.1 1.1 0 0 1-2.2 0v-2.3h-.9a1 1 0 0 1-1-1V9.4a.8.8 0 0 1 .8-.8zM4.6 9a1.1 1.1 0 0 1 1.1 1.1v4.6a1.1 1.1 0 0 1-2.2 0v-4.6A1.1 1.1 0 0 1 4.6 9zm14.8 0a1.1 1.1 0 0 1 1.1 1.1v4.6a1.1 1.1 0 0 1-2.2 0v-4.6A1.1 1.1 0 0 1 19.4 9zM8.3 3.2l.9 1.3A6 6 0 0 1 12 3.8a6 6 0 0 1 2.8.7l.9-1.3a.3.3 0 1 1 .5.3l-.9 1.3A5 5 0 0 1 17.6 8H6.4a5 5 0 0 1 2.3-3.2l-.9-1.3a.3.3 0 1 1 .5-.3zM9.6 6a.6.6 0 1 0 0 1.2.6.6 0 0 0 0-1.2zm4.8 0a.6.6 0 1 0 0 1.2.6.6 0 0 0 0-1.2z"/></svg>
+              <span class="btn-text">
+                <b>Download APK</b>
+                <small>For Android · 38.8 MB</small>
               </span>
-              <span class="pc-edit">Customize ✎</span>
-            </button>
-
-            <div class="label">Mode</div>
-            <div class="diff mode" id="mode">
-              <button data-value="singles" class="active"><span class="big-label">1 vs 1</span><small>Singles</small></button>
-              <button data-value="doubles"><span class="big-label">2 vs 2</span><small>Doubles</small></button>
-            </div>
-
-            <div class="label">Difficulty</div>
-            <div class="diff" id="diff">
-              <button data-value="easy">Easy</button>
-              <button data-value="medium" class="active">Medium</button>
-              <button data-value="hard">Hard</button>
-            </div>
-
-            <label class="toggle">
-              <input type="checkbox" id="voiceToggle" checked>
-              <span class="switch"></span>
-              Referee voice
-            </label>
-
-            <button class="btn big" id="startBtn">Play</button>
-            <button class="btn secondary install" id="installBtn" hidden>⬇ Install app</button>
-            <p class="ios-tip" id="iosTip" hidden>
-              Install on iPhone/iPad: tap <b>Share</b> <span class="share-ico">⎋</span> then <b>Add to Home Screen</b>.
-            </p>
-
-            <details>
-              <summary>Controls</summary>
-              <ul class="list kb-only">
-                <li><kbd>WASD</kbd> / <kbd>Arrows</kbd> move</li>
-                <li><kbd>Space</kbd> or <kbd>J</kbd> drive (also serves)</li>
-                <li><kbd>K</kbd> dink / soft drop into the kitchen</li>
-                <li><kbd>L</kbd> lob</li>
-                <li>Hold <kbd>←</kbd>/<kbd>→</kbd> while hitting to aim</li>
-                <li><kbd>M</kbd> <b>Smash Skill</b>: power smash when the ⚡ energy bar is full</li>
-                <li><kbd>P</kbd> / <kbd>Esc</kbd> menu · <kbd>N</kbd> mute</li>
-              </ul>
-              <ul class="list touch-only">
-                <li><b>Left stick</b> moves your player</li>
-                <li><b>DRIVE</b> hits hard (and serves), <b>DINK</b> drops it soft into the kitchen, <b>LOB</b> goes high and deep</li>
-                <li>Push the stick left/right while you hit to aim at a sideline</li>
-                <li>Tap the button as the ball reaches you</li>
-                <li><b>POWER</b> (bottom-right of the court): <b>Smash Skill</b> when its ring is full</li>
-              </ul>
-            </details>
-            <details>
-              <summary>Rules</summary>
-              <ul class="list">
-                <li>Serve diagonally into the opposite service box. Landing in the kitchen is a fault.</li>
-                <li><b>Two-bounce rule:</b> the serve and the return must each bounce before being hit.</li>
-                <li><b>Kitchen:</b> you can't volley (hit before the bounce) while standing in the non-volley zone.</li>
-                <li>Only the server scores. Lose the rally while serving = side out.</li>
-                <li>Serve from the right when your score is even, the left when odd.</li>
-                <li><b>Smash Skill ⚡:</b> your energy bar fills during rallies, faster each time you hit the ball (+7%) and when your team wins a point (+12%). At <b>100%</b> press <kbd>M</kbd> (or tap <b>POWER</b>) to power up: you glow, and your next shot on a ball you can legally reach (it waits for one) becomes a blazing power smash that is very hard to return. If the bar isn't full, nothing happens. The power smash still follows the two-bounce and kitchen rules, and the energy is only used when you actually hit the ball.</li>
-                <li><b>Doubles (2 vs 2):</b> you team up with a computer partner against two computer opponents (each game they get new names). Both partners serve before a side out, except at the start, which is called “0-0-2”. Partners switch sides only after winning a point on their serve. The score is called as <i>server – receiver – server number</i>.</li>
-                <li>The referees call close balls <b>“Inside”</b>, <b>“Out”</b>, faults and kitchen violations, and announce the score (server's score first) before every serve.</li>
-              </ul>
-            </details>
-            <p class="version-tag">Version 20</p>
+            </a>
+            <a class="btn-ghost" href="#install">How to install ↓</a>
           </div>
+          <p class="platform-note" id="platformNote" hidden></p>
         </div>
 
-        <!-- Customize: name, avatar, paddle -->
-        <div class="overlay hidden" id="settings">
-          <div class="card settings-card">
-            <div class="settings-head">
-              <button class="back-btn inline" id="settingsBack" type="button" aria-label="Back (keeps your changes)" title="Back (keeps your changes)"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Back</span></button>
-              <h2>Customize</h2>
-            </div>
-            <div class="tabs" id="settingsTabs">
-              <button data-tab="avatar" class="active">Player</button>
-              <button data-tab="outfit">Outfit</button>
-              <button data-tab="paddle">Paddle</button>
-            </div>
-
-            <section data-panel="avatar">
-              <div class="avatar-top">
-                <canvas id="portrait"></canvas>
-                <div class="name-field">
-                  <label for="nameInput">Player name</label>
-                  <input id="nameInput" maxlength="16" autocomplete="off" spellcheck="false" placeholder="Player">
-                  <button class="btn secondary small" id="randomAvatar" type="button">🎲 Random look</button>
-                </div>
-              </div>
-              <div id="avatarOptions" class="opt-groups"></div>
-            </section>
-
-            <section data-panel="outfit" hidden>
-              <div class="outfit-wrap">
-                <canvas id="bodyPreview" aria-label="Full-body preview of your player"></canvas>
-                <div id="outfitOptions" class="opt-groups"></div>
-              </div>
-            </section>
-
-            <section data-panel="paddle" hidden>
-              <div class="paddle-feature">
-                <canvas id="paddleBig"></canvas>
-                <div class="pd-info">
-                  <div class="pd-brand" id="pdBrand"></div>
-                  <div class="pd-model" id="pdModel"></div>
-                  <div class="stat"><span>Power</span><i><b id="pdPower"></b></i></div>
-                  <div class="stat"><span>Control</span><i><b id="pdControl"></b></i></div>
-                  <div class="pd-shape" id="pdShape"></div>
-                </div>
-              </div>
-              <div class="paddle-grid" id="paddleGrid"></div>
-            </section>
-
-            <div class="row">
-              <button class="btn" id="settingsDone" type="button">Save</button>
+        <!-- Real gameplay in a phone frame, with numbered callouts -->
+        <figure class="showcase">
+          <div class="showcase-glow" aria-hidden="true"></div>
+          <div class="phone">
+            <div class="phone-screen">
+              <img src="images/gameplay.jpg" width="1600" height="720" class="screen-img" alt="Pickleball Hyper gameplay: a doubles match with the score bar, Smash meter, joystick and Drive, Dink and Lob buttons" fetchpriority="high">
+              <div class="screen-sheen" aria-hidden="true"></div>
+              <span class="pin" style="left:29%;top:7%" aria-hidden="true">1</span>
+              <span class="pin" style="left:15%;top:12%" aria-hidden="true">2</span>
+              <span class="pin" style="left:14.5%;top:64%" aria-hidden="true">3</span>
+              <span class="pin" style="left:88%;top:62%" aria-hidden="true">4</span>
             </div>
           </div>
+          <div class="float-chip chip-a" aria-hidden="true"><span>⚡</span> Smash Skill ready</div>
+          <div class="float-chip chip-b" aria-hidden="true"><span>🎙️</span> “Out!”</div>
+          <figcaption>
+            <ol class="callouts">
+              <li><span class="num">1</span><div><b>Live scoreboard</b><small>Official calls like “0-0-2”</small></div></li>
+              <li><span class="num">2</span><div><b>Smash meter</b><small>Charge it, then go Hyper</small></div></li>
+              <li><span class="num">3</span><div><b>Thumb stick</b><small>Move and aim your shots</small></div></li>
+              <li><span class="num">4</span><div><b>Shot buttons</b><small>Drive, Dink, Lob, Power</small></div></li>
+            </ol>
+          </figcaption>
+        </figure>
+
+        <ul class="hero-badges">
+          <li><b>Free</b><span>to play</span></li>
+          <li><b>1v1 · 2v2</b><span>game modes</span></li>
+          <li><b>3</b><span>CPU skill levels</span></li>
+          <li><b>12</b><span>pro paddles</span></li>
+          <li><b>No</b><span>sign-up</span></li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- ============ TICKER ============ -->
+    <div class="ticker" aria-hidden="true">
+      <div class="ticker-track">
+        <span>DRIVE</span><i>●</i><span>DINK</span><i>●</i><span>LOB</span><i>●</i><span>SMASH</span><i>●</i><span>THE KITCHEN</span><i>●</i><span>TWO-BOUNCE RULE</span><i>●</i><span>SIDE OUT</span><i>●</i><span>0-0-2</span><i>●</i>
+        <span>DRIVE</span><i>●</i><span>DINK</span><i>●</i><span>LOB</span><i>●</i><span>SMASH</span><i>●</i><span>THE KITCHEN</span><i>●</i><span>TWO-BOUNCE RULE</span><i>●</i><span>SIDE OUT</span><i>●</i><span>0-0-2</span><i>●</i>
+      </div>
+    </div>
+
+    <!-- ============ FEATURES ============ -->
+    <section class="section" id="features">
+      <div class="wrap">
+        <div class="section-head reveal">
+          <p class="kicker">Why players love it</p>
+          <h2 class="h2">Real pickleball, at <span class="hl">hyper</span> speed.</h2>
+          <p class="sub">Pick it up in seconds, then spend weeks perfecting your third-shot drop.</p>
         </div>
 
-        <!-- Pause -->
-        <div class="overlay hidden" id="pauseMenu">
-          <div class="card game-menu">
-            <h2>Menu</h2>
-            <p class="tagline">Game paused</p>
-            <div class="menu-list">
-              <button class="btn" id="resumeBtn">▶ Resume</button>
-              <button class="btn secondary" id="pmCustomize">🎨 Customize player</button>
-              <button class="btn secondary" id="restartBtn">↻ Restart match</button>
-              <button class="btn secondary" id="quitBtn">⌂ Main menu</button>
-            </div>
+        <div class="feature-grid">
+          <article class="feature feature-lg reveal">
+            <div class="f-icon">⚡</div>
+            <h3>The Smash Skill</h3>
+            <p>Every hit charges your energy bar, and every point you win charges it more. When it's full, power up and send a blazing smash that's very hard to return.</p>
+            <div class="meter" aria-hidden="true"><span></span></div>
+            <ul class="meter-legend"><li>+7% per hit</li><li>+12% per point won</li></ul>
+          </article>
+
+          <article class="feature reveal">
+            <div class="f-icon">👥</div>
+            <h3>Singles &amp; Doubles</h3>
+            <p>Go 1-on-1, or team up with a CPU partner for 2-vs-2 with real doubles serving: both partners serve, and the game opens with “0-0-2”.</p>
+          </article>
+
+          <article class="feature reveal">
+            <div class="f-icon">🎯</div>
+            <h3>Three skill levels</h3>
+            <p>Easy, Medium or Hard. Start relaxed, then take on CPU opponents who punish every pop-up.</p>
+          </article>
+
+          <article class="feature reveal">
+            <div class="f-icon">📏</div>
+            <h3>The real rules</h3>
+            <p>Two-bounce rule, kitchen violations, side outs, and serving from the right on even scores. It's all here, so you'll actually get better at pickleball.</p>
+          </article>
+
+          <article class="feature reveal">
+            <div class="f-icon">🎙️</div>
+            <h3>Live referee calls</h3>
+            <p>A referee voice calls “Inside”, “Out”, faults and kitchen violations, and announces the score before every serve.</p>
+          </article>
+
+          <article class="feature reveal">
+            <div class="f-icon">🎨</div>
+            <h3>Make it yours</h3>
+            <p>Name your player, style your look and outfit, and choose from 12 original paddles, each with its own power and control.</p>
+          </article>
+
+          <article class="feature feature-wide reveal">
+            <div class="f-icon">🕹️</div>
+            <h3>Built for touch</h3>
+            <p>A thumb stick to move and aim, plus big Drive, Dink and Lob buttons. Push the stick while you swing to paint the sideline.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ SHOTS ============ -->
+    <section class="section section-alt" id="shots">
+      <div class="wrap shots">
+        <div class="shots-copy reveal">
+          <p class="kicker">Your arsenal</p>
+          <h2 class="h2">Four shots.<br>Endless ways to win.</h2>
+          <p class="sub">Timing is everything. Tap as the ball reaches you, aim with the stick, and build the point your way.</p>
+        </div>
+        <div class="shot-list">
+          <div class="shot reveal" style="--c:#d4ff3a">
+            <span class="shot-key">01</span>
+            <div><h3>Drive</h3><p>Flat, fast and low. Use it to serve, to pass, and to keep them pinned at the baseline.</p></div>
+            <svg viewBox="0 0 120 40" aria-hidden="true"><path d="M6 32 Q60 22 114 18"/></svg>
           </div>
-        </div>
-
-        <!-- Game over -->
-        <div class="overlay hidden" id="gameOver">
-          <div class="card">
-            <h2 id="goTitle">You win!</h2>
-            <p class="final" id="goScore">11 – 7</p>
-            <p class="tagline" id="goStats"></p>
-            <div class="row">
-              <button class="btn" id="againBtn">Play again</button>
-              <button class="btn secondary" id="menuBtn">Menu</button>
-            </div>
+          <div class="shot reveal" style="--c:#3ad7ff">
+            <span class="shot-key">02</span>
+            <div><h3>Dink</h3><p>A soft drop into the kitchen. It's patient and precise, and it drives opponents crazy.</p></div>
+            <svg viewBox="0 0 120 40" aria-hidden="true"><path d="M6 32 Q40 4 74 34"/></svg>
+          </div>
+          <div class="shot reveal" style="--c:#b48cff">
+            <span class="shot-key">03</span>
+            <div><h3>Lob</h3><p>High and deep over an opponent rushing the net. Reset the point and take the kitchen line back.</p></div>
+            <svg viewBox="0 0 120 40" aria-hidden="true"><path d="M6 34 Q58 -26 114 34"/></svg>
+          </div>
+          <div class="shot shot-hot reveal" style="--c:#ff6b2c">
+            <span class="shot-key">04</span>
+            <div><h3>Power Smash ⚡</h3><p>Fill the energy bar, power up, and your next legal shot becomes a blazing smash. The rally's over.</p></div>
+            <svg viewBox="0 0 120 40" aria-hidden="true"><path d="M6 6 L114 34"/></svg>
           </div>
         </div>
       </div>
+    </section>
 
-      <!-- Touch: shot buttons -->
-      <div class="pad pad-right">
-        <button class="shot lob" data-shot="lob">LOB</button>
-        <button class="shot dink" data-shot="dink">DINK</button>
-        <button class="shot drive" data-shot="drive">DRIVE</button>
+    <!-- ============ PADDLES ============ -->
+    <section class="section" id="paddles">
+      <div class="wrap">
+        <div class="section-head reveal">
+          <p class="kicker">Gear up</p>
+          <h2 class="h2">12 paddles. Find your feel.</h2>
+          <p class="sub">Want more pop or more touch? Every paddle has its own shape, look and stats.</p>
+        </div>
+        <div class="paddle-rail" id="paddleRail"></div>
       </div>
-    </main>
+    </section>
 
-    <footer class="hint" id="hint">Choose a mode and difficulty, then press Play</footer>
+    <!-- ============ BIG CTA ============ -->
+    <section class="cta-band">
+      <div class="wrap cta-band-inner reveal">
+        <img src="icons/icon-512.png" alt="Pickleball Hyper app icon" class="cta-icon" width="104" height="104">
+        <div class="cta-band-copy">
+          <h2 class="h2">The court is open.</h2>
+          <p>Download Pickleball Hyper and play your first match in under a minute.</p>
+        </div>
+        <a class="btn btn-xl js-download" href="download/PickleballHyper.apk" download="PickleballHyper.apk">
+          <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m0 0l-5-5m5 5l5-5M4 19h16"/></svg>
+          <span class="btn-text"><b>Download APK</b><small>Android · 38.8 MB</small></span>
+        </a>
+      </div>
+    </section>
+
+    <!-- ============ INSTALL ============ -->
+    <section class="section" id="install">
+      <div class="wrap">
+        <div class="section-head reveal">
+          <p class="kicker">Install guide</p>
+          <h2 class="h2">Install on Android in 5 easy steps</h2>
+          <p class="sub">Pickleball Hyper installs straight from this page, not from the Play Store. It only takes about a minute.</p>
+        </div>
+
+        <ol class="steps">
+          <li class="step reveal">
+            <span class="step-num">1</span>
+            <h3>Download the APK</h3>
+            <p>Tap <b>Download APK</b> on this page with your Android phone. If Chrome says the file might be harmful, tap <b>Download anyway</b>. It warns about every app that doesn't come from the Play Store.</p>
+          </li>
+          <li class="step reveal">
+            <span class="step-num">2</span>
+            <h3>Open the file</h3>
+            <p>When the download finishes, tap <b>Open</b> in the pop-up or notification. Or open your <b>Files</b> app → <b>Downloads</b> → <b>PickleballHyper.apk</b>.</p>
+          </li>
+          <li class="step reveal">
+            <span class="step-num">3</span>
+            <h3>Allow this one source</h3>
+            <p>If you see <i>“For your security, your phone is not allowed to install unknown apps from this source”</i>, tap <b>Settings</b>, turn on <b>Allow from this source</b>, then tap back.</p>
+          </li>
+          <li class="step reveal">
+            <span class="step-num">4</span>
+            <h3>Tap Install</h3>
+            <p>Tap <b>Install</b>. If Google Play Protect asks about the app, tap <b>More details</b> → <b>Install anyway</b>.</p>
+          </li>
+          <li class="step reveal">
+            <span class="step-num">5</span>
+            <h3>Play!</h3>
+            <p>Tap <b>Open</b>, or find <b>Pickleball Hyper</b> on your home screen. Turn your phone sideways and serve it up. 🏓</p>
+          </li>
+        </ol>
+
+        <div class="install-tips reveal">
+          <div class="tip">
+            <h4>💡 Tip: you can turn it back off</h4>
+            <p>After installing, you can go to <b>Settings → Apps → Special app access → Install unknown apps</b> and switch your browser back to <i>Not allowed</i>.</p>
+          </div>
+          <div class="tip">
+            <h4>📦 Download not working?</h4>
+            <p>Make sure you have about <b>100 MB</b> of free space and a steady connection, and check your notification shade for the download. If it still fails, try again in Chrome.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ FAQ ============ -->
+    <section class="section section-alt" id="faq">
+      <div class="wrap faq-wrap">
+        <div class="section-head reveal">
+          <p class="kicker">FAQ</p>
+          <h2 class="h2">Questions? Answered.</h2>
+        </div>
+        <div class="faq">
+          <details class="reveal">
+            <summary>Is Pickleball Hyper free?</summary>
+            <p>Yes. Download it, install it and play. You don't need an account or a sign-up.</p>
+          </details>
+          <details class="reveal">
+            <summary>Why isn't it on the Google Play Store?</summary>
+            <p>For now, Pickleball Hyper is shared as a direct APK download, so you get it straight from this page. That's also why Android asks you to allow installs from your browser (step 3 above).</p>
+          </details>
+          <details class="reveal">
+            <summary>Is it available on iPhone or iPad?</summary>
+            <p>Not right now. Pickleball Hyper is an Android app, and APK files can't be installed on iOS.</p>
+          </details>
+          <details class="reveal">
+            <summary>I'm on a computer. How do I get it on my phone?</summary>
+            <p>Open this page on your Android phone and tap <b>Download APK</b>, or scan the QR code on this page with your phone's camera. You can also download the APK on your computer and copy it to your phone.</p>
+          </details>
+          <details class="reveal">
+            <summary>How do I update to a new version?</summary>
+            <p>Download the latest APK from this page and install it over the version you already have. You don't need to uninstall first.</p>
+          </details>
+          <details class="reveal">
+            <summary>Do I need to know pickleball to play?</summary>
+            <p>No. The referee calls every fault, and the rules come up as you play. Start on Easy and you'll understand the two-bounce rule and the kitchen within a few points.</p>
+          </details>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ DESKTOP QR ============ -->
+    <section class="section qr-section" id="qr" hidden>
+      <div class="wrap qr-card reveal">
+        <div class="qr-box" id="qrBox" aria-label="QR code linking to this page"></div>
+        <div>
+          <p class="kicker">On a computer?</p>
+          <h2 class="h2">Scan to get it on your phone</h2>
+          <p class="sub">Point your Android phone's camera at the code to open this page, then tap <b>Download APK</b>.</p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="wrap footer-inner">
+      <a href="#top" class="brand">
+        <img src="icons/icon-192.png" alt="" width="30" height="30">
+        <span>Pickleball <em>Hyper</em></span>
+      </a>
+      <p>© <span id="year">2026</span> Pickleball Hyper. Made for players who live at the kitchen line.</p>
+      <a href="#top" class="to-top">Back to top ↑</a>
+    </div>
+  </footer>
+
+  <!-- Sticky mobile download bar -->
+  <div class="sticky-cta" id="stickyCta" aria-hidden="true">
+    <img src="icons/icon-192.png" alt="" width="40" height="40">
+    <div class="sc-text"><b>Pickleball Hyper</b><small>Free · Android · 38.8 MB</small></div>
+    <a class="btn btn-sm js-download" href="download/PickleballHyper.apk" download="PickleballHyper.apk" tabindex="-1">Download</a>
   </div>
 
-  <script src="customize.js"></script>
-  <script src="game.js"></script>
+  <!-- Download started toast -->
+  <div class="toast" id="toast" role="status" aria-live="polite">
+    <div class="toast-ico">⬇</div>
+    <div>
+      <b>Your download has started</b>
+      <span>When it's done, open <b>PickleballHyper.apk</b> from your notifications or Downloads, then follow the steps below.</span>
+    </div>
+    <button class="toast-close" id="toastClose" aria-label="Close">✕</button>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js" defer></script>
+  <script src="main.js?v=4" defer></script>
 </body>
 </html>
