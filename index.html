@@ -15,7 +15,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,600..900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=4">
+  <link rel="stylesheet" href="style.css?v=5">
 </head>
 <body>
 
@@ -25,6 +25,7 @@
       <a href="#top" class="brand" aria-label="Pickleball Hyper home">
         <img src="icons/icon-192.png" alt="" width="36" height="36">
         <span>Pickleball <em>Hyper</em></span>
+        <span class="beta-tag">BETA</span>
       </a>
       <nav class="nav-links" aria-label="Sections">
         <a href="#features">Features</a>
@@ -57,7 +58,10 @@
 
       <div class="wrap hero-inner">
         <div class="hero-copy">
-          <p class="eyebrow"><span class="dot"></span> Now on Android · Free download</p>
+          <p class="eyebrow">
+            <span class="beta-badge"><span class="dot"></span>BETA TESTING</span>
+            <span>Now on Android · Free download</span>
+          </p>
           <h1 class="display">
             Rally harder. <span class="hl">Dink smarter.</span><br>
             Play <span class="outline">Hyper.</span>
@@ -299,6 +303,10 @@
         </div>
         <div class="faq">
           <details class="reveal">
+            <summary>What does “beta testing” mean?</summary>
+            <p>Pickleball Hyper is still being tested and polished. You get to play it early, but you might run into the occasional bug or rough edge. New beta versions will be posted here, so check back for updates.</p>
+          </details>
+          <details class="reveal">
             <summary>Is Pickleball Hyper free?</summary>
             <p>Yes. Download it, install it and play. You don't need an account or a sign-up.</p>
           </details>
@@ -353,7 +361,7 @@
   <!-- Sticky mobile download bar -->
   <div class="sticky-cta" id="stickyCta" aria-hidden="true">
     <img src="icons/icon-192.png" alt="" width="40" height="40">
-    <div class="sc-text"><b>Pickleball Hyper</b><small>Free · Android · 38.8 MB</small></div>
+    <div class="sc-text"><b>Pickleball Hyper</b><small><span class="sc-beta">BETA</span> Free · Android · 38.8 MB</small></div>
     <a class="btn btn-sm js-download" href="download/PickleballHyper.apk" download="PickleballHyper.apk" tabindex="-1">Download</a>
   </div>
 

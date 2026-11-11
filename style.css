@@ -147,9 +147,30 @@ p { margin: 0; }
 .hero-inner { display: flex; flex-direction: column; align-items: center; }
 .hero-copy { display: flex; flex-direction: column; align-items: center; text-align: center; max-width: 900px; }
 
+/* Beta testing badges (nav tag, hero badge, sticky bar) */
+.beta-tag {
+  margin-left: 2px; padding: 3px 7px 2px; border-radius: 6px;
+  background: var(--orange); color: #1a0700;
+  font-family: var(--display); font-style: normal; font-weight: 900; font-size: 10.5px; letter-spacing: 0.12em;
+  line-height: 1.2;
+  box-shadow: 0 4px 14px -4px rgba(255, 107, 44, 0.8);
+}
+.beta-badge {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 5px 12px 5px 10px; border-radius: 999px;
+  background: var(--orange); color: #1a0700;
+  font-family: var(--display); font-weight: 900; font-size: 12.5px; letter-spacing: 0.14em;
+  box-shadow: 0 6px 20px -6px rgba(255, 107, 44, 0.9);
+}
+.beta-badge .dot { background: #1a0700 !important; animation: none !important; box-shadow: none !important; }
+.sc-beta {
+  display: inline-block; padding: 1px 5px; margin-right: 3px; border-radius: 4px;
+  background: var(--orange); color: #1a0700; font-weight: 900; font-size: 10px; letter-spacing: 0.08em;
+}
+
 .eyebrow {
-  display: inline-flex; align-items: center; gap: 10px;
-  padding: 7px 16px 7px 12px;
+  display: inline-flex; align-items: center; flex-wrap: wrap; justify-content: center; gap: 10px;
+  padding: 5px 16px 5px 5px;
   border: 1px solid rgba(212, 255, 58, 0.3); border-radius: 999px;
   background: rgba(212, 255, 58, 0.06);
   font-size: 13.5px; font-weight: 600; color: #e4f2c0;
@@ -585,6 +606,7 @@ p { margin: 0; }
   .display { font-size: clamp(40px, 12.5vw, 60px); }
   .display .outline { -webkit-text-stroke-width: 1.5px; }
   .lede { font-size: 17px; }
+  .eyebrow { flex-direction: column; gap: 8px; padding: 0; border: 0; background: none; }
   .cta-block { flex-direction: column; width: 100%; gap: 8px; }
   .cta-block .btn-xl { width: 100%; justify-content: center; }
   .showcase { margin-top: 40px; }
