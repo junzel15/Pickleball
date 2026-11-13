@@ -14,6 +14,32 @@
     caches.keys().then((keys) => keys.filter((k) => k.startsWith('pickleball')).forEach((k) => caches.delete(k))).catch(() => {});
   }
 
+  // ---------- Hero screenshots slideshow ----------
+  const screens = $('#screens');
+  if (screens) {
+    const imgs = $$('.screen-img', screens);
+    const tabs = $$('.screen-tab');
+    let current = 0;
+    let timer = null;
+    const show = (i) => {
+      current = (i + imgs.length) % imgs.length;
+      imgs.forEach((img, n) => img.classList.toggle('is-active', n === current));
+      tabs.forEach((t, n) => { t.classList.toggle('is-active', n === current); t.setAttribute('aria-pressed', String(n === current)); });
+      screens.classList.toggle('on-court', current === 0);
+    };
+    const reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const start = () => { if (!reduceMotion && !timer) timer = setInterval(() => show(current + 1), 5000); };
+    const stop = () => { clearInterval(timer); timer = null; };
+    tabs.forEach((t, n) => t.addEventListener('click', () => { stop(); show(n); }));
+    const showcase = screens.closest('.showcase');
+    if (showcase) {
+      showcase.addEventListener('mouseenter', stop);
+      showcase.addEventListener('mouseleave', start);
+    }
+    show(0);
+    start();
+  }
+
   const yearEl = $('#year');
   if (yearEl) yearEl.textContent = new Date().getFullYear();
 
@@ -68,7 +94,7 @@
 
   $$('.js-download').forEach((a) => {
     a.addEventListener('click', () => {
-      // The link's own href + download attribute starts the download.
+      // The link opens the APK on Google Drive in a new tab.
       // Then show what to do next and bring the install steps into view.
       if (isIOS) return;
       showToast();
