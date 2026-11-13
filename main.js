@@ -14,30 +14,124 @@
     caches.keys().then((keys) => keys.filter((k) => k.startsWith('pickleball')).forEach((k) => caches.delete(k))).catch(() => {});
   }
 
+  const reduceMotion = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+
+  // ---------- Mobile menu ----------
+  const navEl = $('#nav');
+  const navToggle = $('#navToggle');
+  if (navEl && navToggle) {
+    const setOpen = (open) => {
+      navEl.classList.toggle('open', open);
+      navToggle.setAttribute('aria-expanded', String(open));
+      navToggle.setAttribute('aria-label', open ? 'Close menu' : 'Open menu');
+    };
+    navToggle.addEventListener('click', () => setOpen(!navEl.classList.contains('open')));
+    $$('#navLinks a').forEach((a) => a.addEventListener('click', () => setOpen(false)));
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape') setOpen(false); });
+    document.addEventListener('click', (e) => { if (!navEl.contains(e.target)) setOpen(false); });
+  }
+
   // ---------- Hero screenshots slideshow ----------
   const screens = $('#screens');
   if (screens) {
     const imgs = $$('.screen-img', screens);
     const tabs = $$('.screen-tab');
+    const bar = $('#screenProgress');
     let current = 0;
     let timer = null;
+    const restartBar = () => {
+      if (!bar) return;
+      bar.classList.remove('run');
+      if (timer) { void bar.offsetWidth; bar.classList.add('run'); }
+    };
     const show = (i) => {
       current = (i + imgs.length) % imgs.length;
       imgs.forEach((img, n) => img.classList.toggle('is-active', n === current));
       tabs.forEach((t, n) => { t.classList.toggle('is-active', n === current); t.setAttribute('aria-pressed', String(n === current)); });
-      screens.classList.toggle('on-court', current === 0);
+      restartBar();
     };
-    const reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    const start = () => { if (!reduceMotion && !timer) timer = setInterval(() => show(current + 1), 5000); };
-    const stop = () => { clearInterval(timer); timer = null; };
+    const start = () => {
+      if (reduceMotion || timer) return;
+      timer = setInterval(() => show(current + 1), 5000);
+      restartBar();
+    };
+    const stop = () => { clearInterval(timer); timer = null; restartBar(); };
     tabs.forEach((t, n) => t.addEventListener('click', () => { stop(); show(n); }));
     const showcase = screens.closest('.showcase');
     if (showcase) {
       showcase.addEventListener('mouseenter', stop);
       showcase.addEventListener('mouseleave', start);
     }
+    // pause while the tab is hidden
+    document.addEventListener('visibilitychange', () => (document.hidden ? stop() : start()));
     show(0);
     start();
+  }
+
+  // ---------- Hyper Skill demo ----------
+  // Loops: charge to 100% -> ready -> tap -> 5 s active (meter drains) -> recharge.
+  // Runs only while it is on screen.
+  const demo = $('#hyperDemo');
+  if (demo) {
+    const fill = $('#hdFill'), label = $('#hdLabel'), dial = $('#hdDial'), btnText = $('#hdBtnText'), caption = $('#hdCaption');
+    const CHARGE = 3.2, READY = 1.8, ACTIVE = 5, COOL = 0.9;
+    const CYCLE = CHARGE + READY + ACTIVE + COOL;
+    let t = 0, last = 0, raf = 0, phase = '';
+    const setPhase = (p) => {
+      if (p === phase) return;
+      phase = p;
+      demo.dataset.phase = p;
+      if (p === 'active') {
+        demo.classList.remove('burst'); void demo.offsetWidth; demo.classList.add('burst', 'tap');
+        setTimeout(() => demo.classList.remove('tap'), 160);
+      }
+      caption.textContent = {
+        charge: 'Charging… every hit and every point fills the meter',
+        ready: 'Meter full: tap HYPER',
+        active: 'HYPER MODE: faster movement, harder shots',
+        cool: 'Hyper over: back to normal, recharging from zero',
+      }[p];
+    };
+    const render = (value, text, btn) => {
+      fill.style.width = value + '%';
+      dial.style.strokeDasharray = value + ' 100';
+      label.textContent = text;
+      btnText.textContent = btn;
+    };
+    const frame = (now) => {
+      const dt = last ? Math.min(0.1, (now - last) / 1000) : 0;
+      last = now;
+      t = (t + dt) % CYCLE;
+      if (t < CHARGE) {
+        setPhase('charge');
+        const v = Math.floor((t / CHARGE) * 100);
+        render(v, v + '%', 'HYPER');
+      } else if (t < CHARGE + READY) {
+        setPhase('ready');
+        render(100, 'TAP HYPER', 'HYPER');
+      } else if (t < CHARGE + READY + ACTIVE) {
+        setPhase('active');
+        const left = CHARGE + READY + ACTIVE - t;
+        render((left / ACTIVE) * 100, 'ACTIVE ' + left.toFixed(1) + 's', Math.ceil(left) + 's');
+      } else {
+        setPhase('cool');
+        render(0, '0%', 'HYPER');
+      }
+      raf = requestAnimationFrame(frame);
+    };
+    if (reduceMotion) {
+      setPhase('active');
+      render(100, 'ACTIVE 5.0s', '5s');
+    } else if ('IntersectionObserver' in window) {
+      new IntersectionObserver((entries) => {
+        entries.forEach((e) => {
+          if (e.isIntersecting && !raf) { last = 0; raf = requestAnimationFrame(frame); }
+          else if (!e.isIntersecting && raf) { cancelAnimationFrame(raf); raf = 0; }
+        });
+      }, { threshold: 0.2 }).observe(demo);
+    } else {
+      raf = requestAnimationFrame(frame);
+    }
   }
 
   const yearEl = $('#year');
@@ -161,6 +255,26 @@
           <div class="stat-row"><span>Control</span><span class="bar ct"><i style="width:${p.control * 10}%"></i></span></div>
         </article>`;
     }).join('');
+  }
+
+  // Arrow buttons for the paddle rail
+  $$('.rail-btn').forEach((b) => b.addEventListener('click', () => {
+    if (rail) rail.scrollBy({ left: Number(b.dataset.dir) * rail.clientWidth * 0.8, behavior: reduceMotion ? 'auto' : 'smooth' });
+  }));
+
+  // ---------- Highlight the nav link for the section on screen ----------
+  const navLinks = $$('#navLinks a');
+  if ('IntersectionObserver' in window && navLinks.length) {
+    const byId = new Map(navLinks.map((a) => [a.getAttribute('href').slice(1), a]));
+    const spy = new IntersectionObserver((entries) => {
+      entries.forEach((e) => {
+        if (!e.isIntersecting) return;
+        navLinks.forEach((a) => a.classList.remove('active'));
+        const link = byId.get(e.target.id);
+        if (link) link.classList.add('active');
+      });
+    }, { rootMargin: '-45% 0px -50% 0px' });
+    byId.forEach((_, id) => { const s = document.getElementById(id); if (s) spy.observe(s); });
   }
 
   // ---------- Reveal on scroll ----------
